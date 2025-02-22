@@ -69,8 +69,8 @@ class IronLionUUID
   def initialize(uuid)
     @uuid = uuid.frozen? ? uuid : uuid.dup.freeze
 
-    bytes = [@uuid.delete("-")].pack("H*")
-    @int = bytes.unpack1("Q>") << 64 | bytes.unpack1("Q<")
+    bytes = [ @uuid.delete("-") ].pack("H*")
+    @int = (bytes.unpack1("Q>") << 64) | bytes.unpack1("Q<")
     @int &= ~(0xf << 76)
     @int &= ~(0x3 << 62)
   end
@@ -90,10 +90,10 @@ class IronLionUUID
   end
 end
 
-IronLionUUID.definition {
+IronLionUUID.definition do
   timestamp bits: 48
   sequence  bits: 10
-  envar     bits: 12, name: :node,  key: :iron_lion_uuid_node_id
+  envar     bits: 12, name: :node, key: :iron_lion_uuid_node_id
   parameter bits: 32, name: :model
   random    bits: 20
-}
+end

@@ -2,31 +2,30 @@
 
 class IronLionUUID
   module Component
+    # Timestamp component for IronLionUUID
     class Timestamp < Base
-      UNITS = %i[ millisecond microsecond nanosecond ]
+      UNITS = %i[ millisecond microsecond nanosecond ].freeze
 
       def value
         Process.clock_gettime Process::CLOCK_REALTIME, unit
       end
 
       def unit
-        @unit ||= begin
+        @unit ||=
           if UNITS.include? options[:unit]
             options[:unit]
           else
             :millisecond
           end
-        end
       end
 
       def multiplier
-        @multiplier ||= begin
+        @multiplier ||=
           case options[:unit]
           when :millisecond then 1_000
           when :nanosecond  then 1_000_000_000
-          else                   1_000_000
+          else 1_000_000
           end
-        end
       end
     end
   end

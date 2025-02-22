@@ -21,11 +21,11 @@ class IronLionUUID
 
       args = args.dup
 
-      big_int, pool = components.inject([0, MAX_BITS]) do |(id, pool), component|
+      big_int, pool = components.inject([ 0, MAX_BITS ]) do |(id, pool), component|
         pool -= component.bits
         arg = args.shift if component.parameter?
         id |= component.call(arg) << pool
-        [id, pool]
+        [ id, pool ]
       end
 
       warn "pool should be 0, is #{pool}" unless pool.zero?
@@ -124,7 +124,7 @@ class IronLionUUID
 
         <<~SQL.tr("\n", "")
           SELECT iron_lion_uuid(
-          #{params.map { |component| component.call args.shift }.join(", ")}
+          #{params.map { |component| component.call args.shift }.join(', ')}
           );
         SQL
       end
@@ -143,7 +143,7 @@ class IronLionUUID
       end
 
       def debug(value)
-        puts("%2d: #{value.to_s(16)}" % value.to_s(2).length)
+        format("%2d: #{value.to_s(16)}", value.to_s(2).length)
         # pp((value.to_s(2).length - 1) => value.to_s(16))
       end
   end

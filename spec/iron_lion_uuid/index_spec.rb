@@ -7,10 +7,10 @@ RSpec.describe IronLionUUID::Index do
 
   describe "#rationalize!" do
     it "handles negative remainder by removing bits from last component" do
-      definition = IronLionUUID::Definition.new(index) do
+      IronLionUUID::Definition.new(index) do
         timestamp bits: 48
         sequence  bits: 48
-        random    bits: 48  # This adds up to 144 bits, too many
+        random    bits: 48 # This adds up to 144 bits, too many
       end
 
       # After rationalization, components should fit within 122 bits
@@ -18,11 +18,11 @@ RSpec.describe IronLionUUID::Index do
     end
 
     it "removes components that end up with 0 bits" do
-      definition = IronLionUUID::Definition.new(index) do
+      IronLionUUID::Definition.new(index) do
         timestamp bits: 48
         sequence  bits: 48
-        random    bits: 48  # Will get reduced to 26
-        parameter bits: 48  # Will get reduced to 0
+        random    bits: 48 # Will get reduced to 26
+        parameter bits: 48 # Will get reduced to 0
       end
 
       expect(index.components.count).to be 3

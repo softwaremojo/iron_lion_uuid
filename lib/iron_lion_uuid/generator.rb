@@ -1,4 +1,7 @@
+# frozen_string_literal: true
+
 class IronLionUUID
+  # Functionality for generating SQL code
   module Generator
     ADAPTERS = %i[postgresql mysql2 sqlite].freeze
     VERSION = 0b1000
@@ -14,6 +17,7 @@ class IronLionUUID
       end
     end
 
+    # Base class for SQL generator
     class Base
       def self.call(...)
         new(...).call
@@ -36,6 +40,7 @@ class IronLionUUID
       end
     end
 
+    # PostgreSQL SQL generator
     class PostgreSQL < Base
       def call
         <<~SQL
@@ -59,6 +64,7 @@ class IronLionUUID
       end
     end
 
+    # MySQL SQL generator
     class Mysql2 < Base
       def call
         <<~SQL
@@ -89,6 +95,7 @@ class IronLionUUID
       end
     end
 
+    # SQLite SQL generator
     class SQLite < Base
       def call
         <<~SQL

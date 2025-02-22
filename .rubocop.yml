@@ -2,7 +2,7 @@ AllCops:
   TargetRubyVersion: 3.1
   NewCops: enable
 
-require:
+plugins:
   - rubocop-performance
   - rubocop-rake
   - rubocop-rspec
@@ -162,6 +162,9 @@ Layout/TrailingEmptyLines:
 Layout/TrailingWhitespace:
   Enabled: true
 
+Lint/UselessAssignment:
+  Enabled: false
+
 Lint/RedundantStringCoercion:
   Enabled: true
 
@@ -174,6 +177,12 @@ Lint/UriEscapeUnescape:
 
 Performance/FlatMap:
   Enabled: true
+
+RSpec/ExampleLength:
+  Enabled: false
+
+RSpec/MultipleExpectations:
+  Enabled: false
 
 # We generally prefer &&/|| but like low-precedence and/or in context
 Style/AndOr:

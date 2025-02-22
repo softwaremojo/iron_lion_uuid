@@ -4,8 +4,9 @@ require "spec_helper"
 
 RSpec.describe IronLionUUID do
   describe "#data" do
-    let(:test_uuid) { "00112233-4455-8667-8899-aabbccddeeff" }
     subject(:uuid) { described_class.new(test_uuid) }
+
+    let(:test_uuid) { "00112233-4455-8667-8899-aabbccddeeff" }
 
     it "correctly extracts bits from the middle" do
       # In the test UUID, bits 64-75 (12 bits) are 8899 in hex

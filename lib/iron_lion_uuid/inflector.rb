@@ -3,6 +3,7 @@
 require "dry/inflector"
 
 class IronLionUUID
+  # Inflector provides functionality for transforming strings
   class Inflector
     class << self
       def instance

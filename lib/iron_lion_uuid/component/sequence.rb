@@ -2,6 +2,7 @@
 
 class IronLionUUID
   module Component
+    # Sequence component for IronLionUUID
     class Sequence < Base
       SEQUENCE_NAME = :iron_lion_uuid_seq
 

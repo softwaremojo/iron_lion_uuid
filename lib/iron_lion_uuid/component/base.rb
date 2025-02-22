@@ -12,8 +12,8 @@ class IronLionUUID
       def initialize(**options)
         @type = Inflector.demodulize.underscore(self.class).to_sym
         @name = options[:name] || @type
-        @bits = [0, options[:bits].to_i].max
-        @encoded = options.key?(:encoded) ? !!options[:encoded] : false
+        @bits = [ 0, options[:bits].to_i ].max
+        @encoded = options.key?(:encoded) ? options[:encoded] : false
         @options = options.except(:name, :bits, :encoded)
       end
 
@@ -23,7 +23,7 @@ class IronLionUUID
 
       def call(arg = nil)
         result = value
-        result = result.(arg) if result.is_a? Proc
+        result = result.call(arg) if result.is_a? Proc
 
         puts "#{self}: #{result.to_s(16)} of #{max_value.to_s(16)}"
         result % max_value
@@ -47,10 +47,10 @@ class IronLionUUID
         is_a? Parameter
       end
 
-      def bits=(n)
-        n = [0, n.to_i].max
-        warn "Component '#{name}' was assigned #{n} bits"
-        @bits = n
+      def bits=(num)
+        num = [ 0, num.to_i ].max
+        warn "Component '#{name}' was assigned #{num} bits"
+        @bits = num
       end
 
       def zero_bits?
@@ -72,13 +72,13 @@ class IronLionUUID
       private
 
       def end_block(matcher = 1)
-        file = matcher.respond_to? :to_path ? match.to_path : caller_file(matcher)
+        file = matcher.respond_to?(:to_path) ? match.to_path : caller_file(matcher)
 
         Marshal.load(
           Marshal.dump(
             YAML.safe_load(
               File.read(file).split(/^__END__$/, 2)[1] || "{}",
-              [Regexp, Symbol],
+              [ Regexp, Symbol ],
               symbolize_names: true
             )
           )
@@ -97,4 +97,3 @@ class IronLionUUID
     end
   end
 end
-

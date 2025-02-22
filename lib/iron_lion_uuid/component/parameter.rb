@@ -2,6 +2,7 @@
 
 class IronLionUUID
   module Component
+    # Parameter component for IronLionUUID
     class Parameter < Base
       def value
         lambda do |param|
