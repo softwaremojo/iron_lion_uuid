@@ -1,0 +1,8 @@
+DELIMITER //
+
+CREATE FUNCTION iron_lion_uuid() RETURNS CHAR(36)
+BEGIN
+  RETURN uuid();
+END; //
+
+DELIMITER ;
