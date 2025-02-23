@@ -1,10 +1,10 @@
 # frozen_string_literal: true
 
 class IronLionUUID
-  module Component
+  class Component
     # Environment variable component that retrieves values from system
     # environment variables.
-    class Envar < Base
+    class Envar < Component
       def value
         @value ||= begin
           str = ENV.fetch((options[:key] || name).to_s.upcase, "")

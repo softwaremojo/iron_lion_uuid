@@ -5,6 +5,8 @@ source "https://rubygems.org"
 # Specify your gem's dependencies in iron_lion_uuid.gemspec
 gemspec
 
+gem "bigdecimal"
+
 gem "pry"
 
 gem "rake", "~> 13.0"

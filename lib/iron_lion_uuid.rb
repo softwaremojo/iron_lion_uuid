@@ -1,5 +1,7 @@
 # frozen_string_literal: true
 
+require "bigdecimal"
+require "forwardable"
 require "pry"
 require_relative "iron_lion_uuid/version"
 
@@ -8,6 +10,8 @@ require_relative "iron_lion_uuid/version"
 # PostgreSQL, MySQL, and SQLite, falling back to a Ruby-based implementation
 # when the database adapter is not supported.
 class IronLionUUID
+  extend Forwardable
+
   autoload :Component,  "iron_lion_uuid/component"
   autoload :Definition, "iron_lion_uuid/definition"
   autoload :Generator,  "iron_lion_uuid/generator"
@@ -66,6 +70,8 @@ class IronLionUUID
 
   attr_reader :uuid, :int
 
+  def_delegators :@uuid, :to_s, :inspect
+
   def initialize(uuid)
     @uuid = uuid.frozen? ? uuid : uuid.dup.freeze
 
@@ -88,12 +94,4 @@ class IronLionUUID
   def index
     self.class.index
   end
-end
-
-IronLionUUID.definition do
-  timestamp bits: 48
-  sequence  bits: 10
-  envar     bits: 12, name: :node, key: :iron_lion_uuid_node_id
-  parameter bits: 32, name: :model
-  random    bits: 20
 end

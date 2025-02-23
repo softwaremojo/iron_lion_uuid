@@ -1,9 +1,9 @@
 # frozen_string_literal: true
 
 class IronLionUUID
-  module Component
+  class Component
     # Sequence component for IronLionUUID
-    class Sequence < Base
+    class Sequence < Component
       SEQUENCE_NAME = :iron_lion_uuid_seq
 
       def value

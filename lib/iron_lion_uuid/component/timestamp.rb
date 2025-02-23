@@ -1,9 +1,9 @@
 # frozen_string_literal: true
 
 class IronLionUUID
-  module Component
+  class Component
     # Timestamp component for IronLionUUID
-    class Timestamp < Base
+    class Timestamp < Component
       UNITS = %i[ millisecond microsecond nanosecond ].freeze
 
       def value

@@ -14,15 +14,20 @@ class IronLionUUID
 
     def initialize(index, &)
       @index = index
-      instance_exec(&)
-      @index.rationalize!
+      yield self
+      @index.validate!
+
+      @index.component_map.inject(0) do |i, (key, component)|
+        IronLionUUID.define_getter key, i, component.bits
+        i += component.bits
+      end
     end
 
     private
 
-      def method_missing(type, *args, &)
+      def method_missing(type, *args, **kwargs, &)
         if respond_to? type
-          @index << Component.create(type, *args)
+          @index << Component.create(type, **kwargs)
         else
           super
         end

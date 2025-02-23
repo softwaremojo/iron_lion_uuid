@@ -90,6 +90,11 @@ Layout/IndentationWidth:
 Layout/LeadingCommentSpace:
   Enabled: true
 
+Layout/LineLength:
+  Max: 90
+  AllowHeredoc: true
+  AllowURI: true
+
 Layout/SpaceAfterColon:
   Enabled: true
 

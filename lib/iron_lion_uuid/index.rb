@@ -1,5 +1,7 @@
 # frozen_string_literal: true
 
+require "forwardable"
+
 class IronLionUUID
   # Index class manages the registry of components that make up a UUID
   # definition. It tracks the bit allocation of each component and
@@ -12,8 +14,14 @@ class IronLionUUID
     MID_MASK        = 0xfff
     LOW_MASK        = 0x3fff_ffffffffffff
 
+    extend Forwardable
+
+    attr_reader :component_map
+
+    def_delegators :@component_map, :[], :[]=, :values, :key?
+
     def initialize
-      @components = {}
+      @component_map = {}
     end
 
     def iron_lion_uuid(*args, sql: false)
@@ -41,7 +49,7 @@ class IronLionUUID
     end
 
     def components
-      @components.values
+      values # delegated to @component_map.values
     end
 
     def params
@@ -52,51 +60,14 @@ class IronLionUUID
       warn "Redefining #{component}"     if exists?     component
       warn "#{component} over bit limit" if over_limit? component
 
-      @components[component.name] = component
+      self[component.name] = component # delegated to @component_map.[]=
     end
 
-    def rationalize!
-      remainder = MAX_BITS - size
+    def validate!
+      return unless (size - MAX_BITS).positive?
 
-      if remainder.positive?
-        zero_bit_components = components.select(&:zero_bits?)
-
-        if zero_bit_components.any?
-          slice = remainder / zero_bit_components.count
-          extra = remainder % zero_bit_components.count
-
-          zero_bit_components.each_with_index do |component, index|
-            component.bits += slice + (index < extra ? 1 : 0)
-          end
-        else
-          components.last.bits += remainder
-        end
-      elsif remainder.negative?
-        components.reverse_each do |component|
-          next if component.zero_bits?
-
-          if component.bits < remainder.abs
-            # We still have too many bits assigned
-            remainder += component.bits
-            component.bits = 0
-          else
-            component.bits += remainder
-            break
-          end
-        end
-      end
-
-      @components.reject! do |_, component|
-        if component.zero_bits?
-          warn "#{component} with 0 bits was removed"
-          true
-        end
-      end
-
-      @components.inject(0) do |index, (key, component)|
-        IronLionUUID.define_getter key, index, component.bits
-        index += component.bits
-      end
+        raise ArgumentError,
+              "Total bits (#{size}) exceeds maximum allowed bits (#{MAX_BITS})"
     end
 
     def size
@@ -130,7 +101,7 @@ class IronLionUUID
       end
 
       def exists?(component)
-        @components.key? component.name
+        key? component.name # delegated to @component_map.key?
       end
 
       def over_limit?(component)

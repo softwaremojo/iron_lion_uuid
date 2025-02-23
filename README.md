@@ -49,14 +49,7 @@ uuid_index << IronLionUUID::Component::Sequence.new(bits: 16)
 uuid_index << IronLionUUID::Component::Random.new(bits: 74)
 ```
 
-### 2. Rationalize Bit Allocation
-
-Ensure all components fit within the 122-bit limit:
-```ruby
-uuid_index.rationalize!
-```
-
-### 3. Generate a UUID
+### 2. Generate a UUID
 
 Generate a UUID by combining the defined components:
 ```ruby

@@ -1,9 +1,9 @@
 # frozen_string_literal: true
 
 class IronLionUUID
-  module Component
+  class Component
     # Parameter component for IronLionUUID
-    class Parameter < Base
+    class Parameter < Component
       def value
         lambda do |param|
           case param
