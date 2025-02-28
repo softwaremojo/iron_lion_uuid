@@ -1,0 +1,729 @@
+# frozen_string_literal: true
+
+# Example YARD documentation for IronLionUUID classes
+
+# Main module
+module IronLionUUID
+  # Configure the UUID structure
+  # @param block [Proc] Configuration block
+  # @yield [Configuration] Configuration instance
+  # @raise [FrozenConfigurationError] If already configured
+  # @return [Configuration] The configuration
+  # @example Basic configuration
+  #   IronLionUUID.configure do |uuid|
+  #     uuid.parameter bits: 16, name: :model
+  #     uuid.timestamp bits: 36, precision: :millisecond
+  #     uuid.random bits: 32
+  #   end
+  def self.configure
+    # implementation
+  end
+
+  # Get the current configuration
+  # @return [Configuration, nil] The current configuration or nil if not configured
+  # @example Accessing the configuration
+  #   config = IronLionUUID.configuration
+  #   puts "Using #{config.total_bits} bits for attributes"
+  def self.configuration
+    # implementation
+  end
+
+  # Generate a new UUID based on the configuration
+  # @param args [Array] Arguments for parameter attributes
+  # @return [UUID] The generated UUID
+  # @raise [ConfigurationError] If UUID structure not configured
+  # @raise [ArgumentError] If not enough arguments for parameters
+  # @example Generating a UUID with a parameter
+  #   uuid = IronLionUUID.generate(1)
+  #   puts uuid  # => "a0b72d14-8c21-8ce2-9012-ff3a35b81401"
+  # @example Accessing embedded data
+  #   puts uuid.model      # => 1
+  #   puts uuid.timestamp  # => 1682625842123
+  def self.generate(*args)
+    # implementation
+  end
+
+  # Create a UUID from a string representation
+  # @param string [String] The UUID string
+  # @return [UUID] The parsed UUID
+  # @raise [ArgumentError] If invalid UUID format
+  # @example Parse a UUID from string
+  #   uuid = IronLionUUID.from_string("a0b72d14-8c21-8ce2-9012-ff3a35b81401")
+  def self.from_string(string)
+    # implementation
+  end
+
+  # Check if a string or object is a valid IronLionUUID
+  # @param value [String, UUID, Object] The value to check
+  # @return [Boolean] true if valid, false otherwise
+  # @example Checking UUID validity
+  #   IronLionUUID.valid?("a0b72d14-8c21-8ce2-9012-ff3a35b81401")  # => true
+  #   IronLionUUID.valid?("not-a-uuid")                            # => false
+  def self.valid?(value)
+    # implementation
+  end
+
+  # Generate SQL for database-side UUID generation
+  # @param dialect [Symbol] The database dialect (:postgresql, :mysql, :sqlite)
+  # @param options [Hash] Options for SQL generation
+  # @option options [String] :function_name Name of the function (default: 'generate_iron_lion_uuid')
+  # @option options [String] :schema Schema name for PostgreSQL (default: 'public')
+  # @option options [Boolean] :binary_output Generate binary UUIDs for MySQL (default: false)
+  # @return [String] The generated SQL
+  # @raise [ArgumentError] If dialect is not supported
+  # @raise [ConfigurationError] If UUID structure not configured
+  # @example Generate PostgreSQL function
+  #   sql = IronLionUUID.generate_sql(:postgresql)
+  #   ActiveRecord::Base.connection.execute(sql)
+  # @example Generate MySQL function with binary output
+  #   sql = IronLionUUID.generate_sql(:mysql, binary_output: true)
+  #   ActiveRecord::Base.connection.execute(sql)
+  def self.generate_sql(dialect, options = {})
+    # implementation
+  end
+
+  # Generate SQL to drop the database function
+  # @param dialect [Symbol] The database dialect (:postgresql, :mysql, :sqlite)
+  # @param options [Hash] Options for SQL generation
+  # @option options [String] :function_name Name of the function (default: 'generate_iron_lion_uuid')
+  # @option options [String] :schema Schema name for PostgreSQL (default: 'public')
+  # @return [String] The generated SQL
+  # @raise [ArgumentError] If dialect is not supported
+  # @raise [ConfigurationError] If UUID structure not configured
+  # @example Drop PostgreSQL function
+  #   sql = IronLionUUID.generate_drop_sql(:postgresql)
+  #   ActiveRecord::Base.connection.execute(sql)
+  def self.generate_drop_sql(dialect, options = {})
+    # implementation
+  end
+
+  # Base class for all attribute types
+  class Attribute
+    # @return [Symbol] The attribute type
+    attr_reader :type
+
+    # @return [Integer] The number of bits used by this attribute
+    attr_reader :bits
+
+    # @return [Symbol, nil] The attribute name (if applicable)
+    attr_reader :name
+
+    # @return [Integer, nil] The position of this attribute in the UUID
+    attr_reader :position
+
+    # Initialize a new attribute
+    # @param type [Symbol] The attribute type
+    # @param bits [Integer] The number of bits
+    # @param options [Hash] Additional options
+    # @option options [Symbol] :name Attribute name
+    # @raise [ConfigurationError] If bit width is invalid
+    def initialize(type, bits, options = {})
+      # implementation
+    end
+
+    # Validate that the bit width is valid
+    # @raise [ConfigurationError] If bit width is invalid
+    def validate_bits!
+      # implementation
+    end
+
+    # Set the position of this attribute in the UUID
+    # @param pos [Integer] The position (0-127)
+    # @raise [ConfigurationError] If the position is invalid
+    def position=(pos)
+      # implementation
+    end
+
+    # Extract this attribute's value from a complete UUID
+    # @param uuid_value [Integer] The 128-bit UUID value
+    # @return [Integer] The extracted value
+    # @raise [ConfigurationError] If attribute position not set
+    def extract_from(uuid_value)
+      # implementation
+    end
+
+    # Apply this attribute's value to a UUID
+    # @param uuid_value [Integer] The existing UUID value
+    # @param attr_value [Integer] The attribute value to apply
+    # @return [Integer] The updated UUID value
+    # @raise [ConfigurationError] If attribute position not set
+    def apply_to(uuid_value, attr_value)
+      # implementation
+    end
+
+    # Generate a value for this attribute
+    # @param args [Array] Arguments passed to the generator
+    # @return [Integer] The generated value
+    # @note This is an abstract method that should be overridden by subclasses
+    # @raise [NotImplementedError] If not overridden by a subclass
+    def generate_value(*args)
+      # implementation
+    end
+
+    # Validate that a value fits within the configured bit width
+    # @param value [Integer] The value to validate
+    # @raise [ValueTooLargeError] If the value is too large
+    # @return [Boolean] true if valid
+    def validate_value!(value)
+      # implementation
+    end
+
+    # Get an option value
+    # @param key [Symbol] The option key
+    # @return [Object, nil] The option value or nil if not set
+    def [](key)
+      # implementation
+    end
+  end
+
+  # Random attribute - generates random bits
+  class RandomAttribute < Attribute
+    # Initialize a new RandomAttribute
+    # @param options [Hash] Options for this attribute
+    # @option options [Integer] :bits Number of bits to use (required)
+    # @option options [Symbol] :name Name for this attribute (optional)
+    def initialize(options = {})
+      # implementation
+    end
+
+    # Generate a random value of appropriate bit width
+    # @param _args [Array] Arguments (unused for random attributes)
+    # @return [Integer] Random value constrained to the configured bit width
+    def generate_value(*_args)
+      # implementation
+    end
+  end
+
+  # Parameter attribute - takes a value at generation time
+  class ParameterAttribute < Attribute
+    # Initialize a new ParameterAttribute
+    # @param options [Hash] Options for this attribute
+    # @option options [Integer] :bits Number of bits to use (required)
+    # @option options [Symbol] :name Name for this attribute (required)
+    # @raise [ConfigurationError] If name is not provided
+    def initialize(options = {})
+      # implementation
+    end
+
+    # Generate a value using the provided parameter
+    # @param args [Array] Arguments passed to the generator
+    # @return [Integer] The parameter value, converted if necessary
+    # @raise [ArgumentError] If no parameter value is provided
+    # @raise [ValueTooLargeError] If the parameter value exceeds the bit width
+    def generate_value(*args)
+      # implementation
+    end
+
+    private
+
+    # Convert parameter value to integer if needed
+    # @param value [Integer, String] The parameter value
+    # @return [Integer] The converted value
+    def convert_value(value)
+      # implementation
+    end
+  end
+
+  # Environment variable attribute - takes a value from an environment variable
+  class EnvAttribute < Attribute
+    # Initialize a new EnvAttribute
+    # @param options [Hash] Options for this attribute
+    # @option options [Integer] :bits Number of bits to use (required)
+    # @option options [Symbol] :name Name for this attribute (required)
+    # @option options [Symbol, String] :key Environment variable key (required)
+    # @raise [ConfigurationError] If name or key is not provided
+    def initialize(options = {})
+      # implementation
+    end
+
+    # Generate a value by retrieving from the environment
+    # @param _args [Array] Arguments passed to the generator (unused for env attributes)
+    # @return [Integer] The environment variable value, converted if necessary
+    # @raise [MissingEnvironmentError] If the environment variable is not set
+    # @raise [ValueTooLargeError] If the environment variable value exceeds the bit width
+    def generate_value(*_args)
+      # implementation
+    end
+
+    private
+
+    # Convert environment variable value to integer
+    # @param value [String] The environment variable value
+    # @return [Integer] The converted value
+    def convert_value(value)
+      # implementation
+    end
+  end
+
+  # Timestamp attribute - uses the current time at specified precision
+  class TimestampAttribute < Attribute
+    # Available precision levels
+    PRECISIONS = %i[second millisecond microsecond nanosecond]
+
+    # Multipliers for converting time to the desired precision
+    PRECISION_MULTIPLIERS = {
+      second: 1,
+      millisecond: 1_000,
+      microsecond: 1_000_000,
+      nanosecond: 1_000_000_000
+    }
+
+    # Initialize a new TimestampAttribute
+    # @param options [Hash] Options for this attribute
+    # @option options [Integer] :bits Number of bits to use (required)
+    # @option options [Symbol] :precision Time precision (second, millisecond, microsecond, nanosecond)
+    # @option options [Symbol] :name Name for this attribute (optional)
+    # @raise [ConfigurationError] If precision is invalid
+    def initialize(options = {})
+      # implementation
+    end
+
+    # Generate a timestamp value at the configured precision
+    # @param _args [Array] Arguments passed to the generator (unused for timestamp attributes)
+    # @return [Integer] The timestamp value
+    # @raise [ValueTooLargeError] If the timestamp value exceeds the bit width
+    def generate_value(*_args)
+      # implementation
+    end
+
+    private
+
+    # Check if the system supports the requested precision
+    # @raise [TimestampPrecisionWarning] If the system doesn't support the precision
+    def check_system_precision!
+      # implementation
+    end
+
+    # Detect the system's time precision capability
+    # @return [Symbol] The detected precision (:second, :millisecond, :microsecond, :nanosecond)
+    def detect_system_precision
+      # implementation
+    end
+  end
+
+  # Sequence attribute - provides auto-incrementing sequence numbers
+  class SequenceAttribute < Attribute
+    # Initialize a new SequenceAttribute
+    # @param options [Hash] Options for this attribute
+    # @option options [Integer] :bits Number of bits to use (required)
+    # @option options [Symbol] :name Name for this attribute (optional)
+    def initialize(options = {})
+      # implementation
+    end
+
+    # Generate the next sequence value with thread safety
+    # @param _args [Array] Arguments passed to the generator (unused for sequence attributes)
+    # @return [Integer] The next sequence value
+    def generate_value(*_args)
+      # implementation
+    end
+  end
+
+  # Holds the configuration for UUID structure
+  class Configuration
+    # Total configurable bits (128 - version(4) - variant(2))
+    TOTAL_AVAILABLE_BITS = 122
+
+    # Reserved bit positions
+    VERSION_BITS_RANGE = (48..51)
+    VARIANT_BITS_RANGE = (64..65)
+
+    # Initialize a new Configuration
+    def initialize
+      # implementation
+    end
+
+    # Add an attribute to the configuration
+    # @param attribute [Attribute] The attribute to add
+    # @raise [FrozenConfigurationError] If the configuration is frozen
+    def add_attribute(attribute)
+      # implementation
+    end
+
+    # Calculate the next available position for an attribute
+    # @param bit_width [Integer] The width of the attribute in bits
+    # @return [Integer] The calculated position
+    def calculate_next_position(bit_width)
+      # implementation
+    end
+
+    # Freeze the configuration to prevent further modifications
+    # @return [Configuration] self
+    def freeze!
+      # implementation
+    end
+
+    # Check if the configuration is frozen
+    # @return [Boolean] true if frozen, false otherwise
+    def frozen?
+      # implementation
+    end
+
+    # Validate the configuration
+    # @raise [InvalidBitWidthError] If the total bit count exceeds the available space
+    # @return [Boolean] true if valid
+    def validate!
+      # implementation
+    end
+
+    # Get all configured attributes
+    # @return [Array<Attribute>] Array of configured attributes
+    def attributes
+      # implementation
+    end
+
+    # Get the total bits used
+    # @return [Integer] Total bits used
+    def total_bits
+      # implementation
+    end
+
+    # Get the remaining available bits
+    # @return [Integer] Remaining available bits
+    def remaining_bits
+      # implementation
+    end
+
+    # Get all attributes of a specific type
+    # @param type [Symbol] The attribute type
+    # @return [Array<Attribute>] Array of attributes of the specified type
+    def attributes_of_type(type)
+      # implementation
+    end
+
+    # Get an attribute by name
+    # @param name [Symbol] The attribute name
+    # @return [Attribute, nil] The attribute or nil if not found
+    def attribute_by_name(name)
+      # implementation
+    end
+
+    # Add a parameter attribute to the configuration
+    # @param options [Hash] Attribute options
+    # @option options [Integer] :bits Number of bits to use (required)
+    # @option options [Symbol] :name Attribute name (required)
+    # @return [ParameterAttribute] The created attribute
+    # @example Add a parameter attribute
+    #   uuid.parameter bits: 16, name: :model
+    def parameter(options = {})
+      # implementation
+    end
+
+    # Add an environment variable attribute to the configuration
+    # @param options [Hash] Attribute options
+    # @option options [Integer] :bits Number of bits to use (required)
+    # @option options [Symbol] :name Attribute name (required)
+    # @option options [Symbol, String] :key Environment variable key (required)
+    # @return [EnvAttribute] The created attribute
+    # @example Add an environment variable attribute
+    #   uuid.env bits: 12, name: :node, key: :NODE_ID
+    def env(options = {})
+      # implementation
+    end
+
+    # Add a timestamp attribute to the configuration
+    # @param options [Hash] Attribute options
+    # @option options [Integer] :bits Number of bits to use (required)
+    # @option options [Symbol] :precision Time precision (:second, :millisecond, :microsecond, :nanosecond)
+    # @option options [Symbol] :name Name for this attribute (optional)
+    # @return [TimestampAttribute] The created attribute
+    # @example Add a timestamp attribute
+    #   uuid.timestamp bits: 36, precision: :millisecond
+    def timestamp(options = {})
+      # implementation
+    end
+
+    # Add a random attribute to the configuration
+    # @param options [Hash] Attribute options
+    # @option options [Integer] :bits Number of bits to use (required)
+    # @option options [Symbol] :name Optional name for the attribute
+    # @return [RandomAttribute] The created attribute
+    # @example Add a random attribute
+    #   uuid.random bits: 32
+    def random(options = {})
+      # implementation
+    end
+
+    # Add a sequence attribute to the configuration
+    # @param options [Hash] Attribute options
+    # @option options [Integer] :bits Number of bits to use (required)
+    # @option options [Symbol] :name Optional name for the attribute
+    # @return [SequenceAttribute] The created attribute
+    # @example Add a sequence attribute
+    #   uuid.sequence bits: 16
+    def sequence(options = {})
+      # implementation
+    end
+
+    # Validate required options
+    # @param options [Hash] The options hash
+    # @param required [Array<Symbol>] Required option keys
+    # @param optional [Array<Symbol>] Optional option keys
+    # @raise [ConfigurationError] If required options are missing
+    # @return [void]
+    def validate_options!(options, required, optional = [])
+      # implementation
+    end
+  end
+
+  # Represents a UUID (Universally Unique Identifier)
+  class UUID
+    include Comparable
+
+    # @return [Integer] The 128-bit UUID value
+    attr_reader :value
+
+    # Initialize a new UUID
+    # @param value [Integer] The 128-bit value
+    # @raise [ArgumentError] If the value is not a valid 128-bit unsigned integer
+    def initialize(value)
+      # implementation
+    end
+
+    # Convert to standard UUID string format
+    # @return [String] The UUID string in 8-4-4-4-12 format
+    def to_s
+      # implementation
+    end
+
+    # Convert to raw hex string
+    # @return [String] The UUID as a 32-character hex string
+    def to_hex
+      # implementation
+    end
+
+    # Compare with another UUID
+    # @param other [UUID] The other UUID
+    # @return [Integer] -1, 0, or 1
+    def <=>(other)
+      # implementation
+    end
+
+    # Check if equal to another object
+    # @param other [Object] The other object
+    # @return [Boolean] true if equal, false otherwise
+    def ==(other)
+      # implementation
+    end
+
+    # Check if equal to another object (for hash keys)
+    # @param other [Object] The other object
+    # @return [Boolean] true if equal, false otherwise
+    def eql?(other)
+      # implementation
+    end
+
+    # Calculate hash code
+    # @return [Integer] The hash code
+    def hash
+      # implementation
+    end
+
+    # Return a debug-friendly string representation
+    # @return [String] The string representation
+    def inspect
+      # implementation
+    end
+
+    # Extract the UUID version
+    # @return [Integer] The UUID version (should be 8 for IronLionUUID)
+    def version
+      # implementation
+    end
+
+    # Extract the UUID variant
+    # @return [Integer] The UUID variant (should be 2 for RFC 4122)
+    def variant
+      # implementation
+    end
+  end
+
+  # Enhanced UUID with attribute value extraction
+  class CustomUUID < UUID
+    include Comparable
+
+    # Initialize a new CustomUUID
+    # @param value [Integer] The 128-bit value
+    # @param attributes [Array<Attribute>] The attributes to extract values from
+    def initialize(value, attributes = [])
+      # implementation
+    end
+
+    # Convert to standard UUID format
+    # An alias for to_s for API consistency
+    # @return [String] The UUID string
+    def to_standard_uuid
+      # implementation
+    end
+
+    private
+
+    # Define accessor methods for named attributes
+    def define_attribute_accessors
+      # implementation
+    end
+  end
+
+  # Handles UUID generation based on configured attributes
+  class Generator
+    # UUID version and variant constants
+    VERSION_UUID_V8 = 8
+    VARIANT_RFC_4122 = 2
+
+    # Version bit position (4 bits)
+    VERSION_POSITION = 48
+    VERSION_BITS = 4
+
+    # Variant bit position (2 bits)
+    VARIANT_POSITION = 64
+    VARIANT_BITS = 2
+
+    # Initialize a new Generator
+    # @param configuration [Configuration] The UUID structure configuration
+    def initialize(configuration)
+      # implementation
+    end
+
+    # Generate a new UUID based on the configuration
+    # @param args [Array] Arguments for parameter attributes
+    # @return [CustomUUID] The generated UUID with accessor methods
+    # @raise [ArgumentError] If not enough arguments for parameters
+    def generate(*args)
+      # implementation
+    end
+  end
+
+  # ActiveRecord type casting for IronLionUUID
+  # Handles conversion between database representations and Ruby objects
+  class Type < ActiveRecord::Type::Binary
+    # Cast a value from user input to the appropriate ruby type
+    # @param value [Object] The value to cast
+    # @return [IronLionUUID::UUID, nil] The casted value
+    # @example Cast a string to UUID
+    #   type = IronLionUUID::Type.new
+    #   uuid = type.cast("12345678-9abc-def0-1234-56789abcdef0")
+    def cast(value)
+      # implementation
+    end
+
+    # Serialize a value to the database
+    # @param value [IronLionUUID::UUID, String, nil] The value to serialize
+    # @return [String, nil] The serialized value
+    def serialize(value)
+      # implementation
+    end
+
+    # Deserialize a value from the database
+    # @param value [String, nil] The value from the database
+    # @return [IronLionUUID::UUID, nil] The deserialized value
+    def deserialize(value)
+      # implementation
+    end
+
+    # Define the native database type (usually uuid for PostgreSQL, string for others)
+    # @return [Symbol] The native database type
+    def type
+      # implementation
+    end
+
+    # Used by ActiveRecord to determine how to quote the value
+    # @return [Boolean] Whether the value is binary
+    def binary?
+      # implementation
+    end
+  end
+
+  # Concern for ActiveRecord models to use IronLionUUID as primary keys and foreign keys
+  module HasIronLionId
+    extend ActiveSupport::Concern
+
+    included do
+      # This method gets called when the module is included in an ActiveRecord model
+      # implementation
+    end
+
+    # Define a method to generate new IronLionUUIDs for this model
+    # This is useful for setting IDs before saving records
+    module ClassMethods
+      # Generate a new IronLionUUID for this model
+      # @param args [Array] Additional arguments to pass to IronLionUUID.generate
+      # @return [IronLionUUID::UUID] A new UUID
+      # @example Generate a UUID for a model
+      #   uuid = User.generate_uuid(ModelCodes::USER)
+      def generate_uuid(*args)
+        # implementation
+      end
+    end
+
+    # Set a new UUID for this record (if it's using UUIDs as primary keys)
+    # @param args [Array] Additional arguments to pass to IronLionUUID.generate
+    # @return [IronLionUUID::UUID] The newly set UUID
+    # @example Set a UUID on a record
+    #   user = User.new
+    #   user.set_uuid(ModelCodes::USER)
+    def set_uuid(*args)
+      # implementation
+    end
+
+    # Set a new UUID for this record if it doesn't already have one
+    # @param args [Array] Additional arguments to pass to IronLionUUID.generate
+    # @return [IronLionUUID::UUID, nil] The newly set UUID or nil if already present
+    # @example Set a UUID if not already set
+    #   user = User.new
+    #   user.set_uuid_if_nil(ModelCodes::USER)
+    def set_uuid_if_nil(*args)
+      # implementation
+    end
+  end
+
+  # Generates SQL functions for database-side UUID generation
+  # that match the Ruby-side configuration
+  class SQLGenerator
+    # Dialect options for supported databases
+    DIALECTS = %i[postgresql mysql sqlite]
+
+    # Create a generator for the specified dialect
+    # @param dialect [Symbol] The database dialect (:postgresql, :mysql, :sqlite)
+    # @param configuration [Configuration] The UUID configuration
+    # @return [SQLGenerator] The appropriate generator
+    # @raise [ArgumentError] If the dialect is not supported
+    # @example Create a PostgreSQL generator
+    #   generator = IronLionUUID::SQLGenerator.for_dialect(:postgresql)
+    #   sql = generator.generate_function
+    def self.for_dialect(dialect, configuration = nil)
+      # implementation
+    end
+
+    # Initialize a new SQLGenerator
+    # @param dialect [Symbol] The database dialect (:postgresql, :mysql, :sqlite)
+    # @param configuration [Configuration] The UUID configuration
+    # @raise [ArgumentError] If the dialect is not supported
+    # @raise [ConfigurationError] If configuration is nil and IronLionUUID not configured
+    def initialize(dialect, configuration = nil)
+      # implementation
+    end
+
+    # Generate SQL function for the configured UUID structure
+    # @param options [Hash] Options for function generation
+    # @option options [String] :function_name Name of the function (default: 'generate_iron_lion_uuid')
+    # @option options [String] :schema Schema name for PostgreSQL (default: 'public')
+    # @option options [Boolean] :binary_output Generate binary UUIDs for MySQL (default: false)
+    # @return [String] The generated SQL function
+    # @example Generate PostgreSQL function
+    #   sql = generator.generate_function(function_name: 'custom_uuid_generator')
+    def generate_function(options = {})
+      # implementation
+    end
+
+    # Generate drop statement for the function
+    # @param options [Hash] Options for function dropping
+    # @option options [String] :function_name Name of the function (default: 'generate_iron_lion_uuid')
+    # @option options [String] :schema Schema name for PostgreSQL (default: 'public')
+    # @return [String] The SQL drop statement
+    # @example Drop PostgreSQL function
+    #   sql = generator.generate_drop_function(function_name: 'custom_uuid_generator')
+    def generate_drop_function(options = {})
+      # implementation
+    end
+  end
+end

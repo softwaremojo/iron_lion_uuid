@@ -208,7 +208,7 @@ module IronLionUUID
       end
     end
 
-    def set_position(position)
+    def position = position
       @position = position
       self
     end
@@ -236,7 +236,7 @@ def add_field(field)
   position = calculate_next_position
 
   # Set field position and add to fields array
-  @fields << field.set_position(position)
+  @fields << (field.position = position)
 
   self
 end

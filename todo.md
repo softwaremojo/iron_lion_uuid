@@ -84,7 +84,7 @@
   - [ ] Implement initialize with options hash
   - [ ] Store bit width, name, and position
   - [ ] Implement validate_bits! method
-  - [ ] Implement set_position method
+  - [ ] Implement position= method
   - [ ] Implement extract_from method using BitOps
   - [ ] Implement apply_to method using BitOps
 - [ ] Update Configuration class for field positioning

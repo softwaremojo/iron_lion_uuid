@@ -1,0 +1,23 @@
+class CreateIronLionUuidFunctionsFor<%= database.camelize %> < ActiveRecord::Migration<%= migration_version %>
+  def up
+    <% if database != "primary" %>
+    # Switch to the <%= database %> database
+    establish_connection :<%= database %>
+    <% end %>
+
+    execute <<-SQL
+<%= IronLionUUID::SQLGenerator.for_dialect(dialect).generate_function(function_name: 'generate_iron_lion_uuid', binary_output: binary_output) %>
+    SQL
+  end
+
+  def down
+    <% if database != "primary" %>
+    # Switch to the <%= database %> database
+    establish_connection :<%= database %>
+    <% end %>
+
+    execute <<-SQL
+<%= IronLionUUID::SQLGenerator.for_dialect(dialect).generate_drop_function(function_name: 'generate_iron_lion_uuid') %>
+    SQL
+  end
+end
