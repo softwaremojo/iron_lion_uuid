@@ -22,7 +22,14 @@ module IronLion
       value = from_env(field) if value.nil?
       raise MissingValueError, missing_message(field, record) if value.nil?
 
-      fit!(field, field.model? ? model_id(field, value) : integer(field, value))
+      fit!(field, encode(field, value))
+    end
+
+    def encode(field, value)
+      if field.model? then model_id(field, value)
+      elsif field.kind == :text then text(field, value)
+      else integer(field, value)
+      end
     end
 
     def env_key(field) = "IRON_LION_#{field.name.upcase}"
@@ -52,7 +59,7 @@ module IronLion
 
     def from_env(field)
       raw = ENV.fetch(env_key(field), nil) or return
-      Integer(raw, 10)
+      field.kind == :text ? raw : Integer(raw, 10)
     rescue ArgumentError
       raise InvalidValueError, "ENV[#{env_key(field).inspect}] is #{raw.inspect}; #{field.name} needs an integer"
     end
@@ -64,6 +71,14 @@ module IronLion
 
       raise InvalidValueError,
             "#{field.name} must be an integer (or something with an integer #id), not #{value.inspect}"
+    end
+
+    def text(field, value)
+      return text(field, value.id) if !value.is_a?(String) && !value.is_a?(Symbol) && value.respond_to?(:id)
+
+      Base36.encode(value, field.options[:chars])
+    rescue ArgumentError => e
+      raise InvalidValueError, "#{field.name} #{value.inspect} #{e.message}"
     end
 
     def model_id(field, value)
@@ -85,6 +100,8 @@ module IronLion
       raise OverflowError, "#{field.name} #{value} does not fit in #{field.bits} bits (0..#{field.max})"
     end
 
+    def width(field) = field.kind == :text ? "chars: #{field.options[:chars]}" : "bits: #{field.bits}"
+
     def missing_message(field, record)
       name = field.name
       record_hint =
@@ -96,7 +113,7 @@ module IronLion
         No value for #{name}. IronLion looked in:
           1. IronLion.generate(#{name}: ...)
           2. the record: #{record_hint}
-          3. a resolver: `#{name} bits: #{field.bits}, from: -> { ... }` #{resolver_hint}
+          3. a resolver: `#{name} #{width(field)}, from: -> { ... }` #{resolver_hint}
           4. ENV[#{env_key(field).inspect}]
       MESSAGE
     end

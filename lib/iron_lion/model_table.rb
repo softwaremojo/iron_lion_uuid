@@ -82,6 +82,7 @@ module IronLion
 
     def assign_in_file(name, capacity)
       FileUtils.mkdir_p(File.dirname(path))
+
       File.open(path, File::RDWR | File::CREAT, 0o644) do |file|
         file.flock(File::LOCK_EX)
         current = read(file.read)
@@ -92,6 +93,7 @@ module IronLion
         file.truncate(file.pos)
         @ids = current.freeze
       end
+
       @ids.fetch(name)
     end
 

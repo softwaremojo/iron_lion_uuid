@@ -11,27 +11,39 @@ module IronLion
 
     def initialize(declarations)
       offset = 0
+
       @fields = Declaration.arrange(declarations).map do |proto|
-        field = Field.new(name: proto.name, kind: proto.kind, bits: proto.bits, offset:, options: proto.options)
+        field = Field.new(
+          name: proto.name,
+          kind: proto.kind,
+          bits: proto.bits,
+          offset: offset,
+          options: proto.options
+        )
+
         offset += proto.bits
         field
       end.freeze
+
       @by_name = @fields.to_h { [_1.name, _1] }.freeze
       @time = @fields.first
       @counter = @fields.find { _1.kind == :counter }
       @clock = Clock.new(@counter&.max)
       @id_class = build_id_class
+
       freeze
     end
 
     def field_names = @by_name.keys
 
     def generate(record = nil, **values)
-      reject_unknown!(values)
+      reject_unknown! values
       millisecond, sequence = timestamp(values)
+
       payload = @fields.sum do |field|
         field.place(raw_value(field, record, values, millisecond, sequence))
       end
+
       @id_class.new(self, Layout.to_uuid(payload))
     end
 
@@ -41,20 +53,27 @@ module IronLion
              when Integer then input
              else Layout.from_string(input.to_s)
              end
+
       @id_class.new(self, uuid)
     end
 
     # Decodes one field from a payload.
     def read(payload, name)
       field = @by_name.fetch(name) do
-        raise KeyError, "this format has no #{name} field (it has #{field_names.join(', ')})"
+        raise KeyError,
+              "this format has no #{name} field (it has #{field_names.join(', ')})"
       end
-      decode(field, field.extract(payload))
+
+      decode field, field.extract(payload)
     end
 
     # The language-neutral description other back ends (SQL, Rust) consume.
     def to_h
-      { version: 8, payload_bits: Layout::PAYLOAD_BITS, fields: @fields.map(&:to_h) }
+      {
+        version: 8,
+        payload_bits: Layout::PAYLOAD_BITS,
+        fields: @fields.map(&:to_h)
+      }
     end
 
     def inspect
@@ -68,7 +87,8 @@ module IronLion
       return if unknown.empty?
 
       raise ArgumentError,
-            "unknown field #{unknown.map(&:inspect).join(', ')}; this format has #{field_names.join(', ')}"
+            "unknown field #{unknown.map(&:inspect).join(', ')}; " \
+            "this format has #{field_names.join(', ')}"
     end
 
     def timestamp(values)
@@ -116,12 +136,14 @@ module IronLion
         Time.at(millisecond / 1000, millisecond % 1000, :millisecond, in: "UTC")
       when :value
         field.model? ? field.options[:table].model_for(raw) : raw
+      when :text then Base36.decode(raw)
       else raw
       end
     end
 
     def build_id_class
       names = field_names
+
       Class.new(Id) do
         names.each { |name| define_method(name) { self[name] } }
       end

@@ -13,7 +13,11 @@ module IronLion
 
     def initialize(sequence_max = nil, source: nil)
       @sequence_max = sequence_max
-      @source = source || -> { Process.clock_gettime(Process::CLOCK_REALTIME, :millisecond) }
+
+      @source = source || lambda {
+        Process.clock_gettime(Process::CLOCK_REALTIME, :millisecond)
+      }
+
       @mutex = Mutex.new
       @last = -1
       @sequence = 0
@@ -28,6 +32,7 @@ module IronLion
 
       @mutex.synchronize do
         current = now
+
         if current > @last
           @last = current
           @sequence = 0
@@ -37,6 +42,7 @@ module IronLion
           @last += 1
           @sequence = 0
         end
+
         [@last, @sequence]
       end
     end

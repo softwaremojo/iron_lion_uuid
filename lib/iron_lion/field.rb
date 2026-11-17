@@ -17,6 +17,7 @@ module IronLion
     def to_h
       spec = { name:, kind:, bits:, offset: }
       spec[:epoch_ms] = options[:epoch_ms] if kind == :time
+      spec[:chars] = options[:chars] if kind == :text
       spec
     end
   end

@@ -6,8 +6,9 @@ module IronLion
   module Declaration
     Proto = Data.define(:name, :kind, :bits, :options)
 
-    # The keyword names the kind; its value is the width in bits.
-    KIND_KEYWORDS = { bits: :value, time: :time, counter: :counter, random: :random }.freeze
+    # The keyword names the kind; its value is the width in bits, except for
+    # `chars:`, whose value is a maximum string length.
+    KIND_KEYWORDS = { bits: :value, time: :time, counter: :counter, random: :random, chars: :text }.freeze
 
     # Field names that carry built-in behaviour when declared with `bits:`.
     NAMED_KINDS = { created_at: :time, sequence: :counter, random: :random }.freeze
@@ -15,7 +16,7 @@ module IronLion
     # Fields that may be declared without a width.
     DEFAULT_BITS = { created_at: 48 }.freeze
 
-    OPTIONS = { value: %i[from], time: %i[epoch], counter: [], random: [] }.freeze
+    OPTIONS = { value: %i[from], text: %i[from], time: %i[epoch], counter: [], random: [] }.freeze
     MODEL_OPTIONS = %i[table].freeze
 
     NAME = /\A[a-z_][a-z0-9_]*\z/
@@ -33,12 +34,27 @@ module IronLion
     def parse(name, options)
       validate_name!(name)
       keyword = kind_keyword(name, options)
+      return parse_text(name, options) if keyword == :chars
+
       bits = keyword ? options[keyword] : DEFAULT_BITS[name]
       raise ConfigurationError, "#{name} needs a width, e.g. `#{name} bits: 16`" if bits.nil?
 
       kind = keyword.nil? || keyword == :bits ? NAMED_KINDS.fetch(name, :value) : KIND_KEYWORDS[keyword]
       validate_bits!(name, bits)
       Proto.new(name:, kind:, bits:, options: normalize(name, kind, options.except(*KIND_KEYWORDS.keys)))
+    end
+
+    # `subdomain chars: 6` sizes itself: enough bits for any alphanumeric
+    # string of up to 6 characters.
+    def parse_text(name, options)
+      chars = options[:chars]
+      longest = (1..).find { Base36.bits(_1 + 1) > Layout::PAYLOAD_BITS }
+      unless chars.is_a?(Integer) && chars.between?(1, longest)
+        raise ConfigurationError, "#{name} must be 1..#{longest} chars, not #{chars.inspect}"
+      end
+
+      options = normalize(name, :text, options.except(:chars)).merge(chars:)
+      Proto.new(name:, kind: :text, bits: Base36.bits(chars), options:)
     end
 
     # Checks a whole format's declarations and settles their order: one
@@ -50,6 +66,7 @@ module IronLion
       check_time!(declarations)
       declarations.unshift(implied_time) if declarations.none? { _1.kind == :time }
       counters = declarations.select { _1.kind == :counter }
+
       if counters.size > 1
         raise ConfigurationError, "a format has at most one counter; found #{counters.map(&:name).join(', ')}"
       end
@@ -73,11 +90,13 @@ module IronLion
     def fill_remainder(declarations)
       used = declarations.sum(&:bits)
       spare = Layout::PAYLOAD_BITS - used
+
       if spare.negative?
         breakdown = declarations.map { "#{_1.name} #{_1.bits}" }.join(" + ")
         raise ConfigurationError,
               "#{breakdown} = #{used} bits, but a UUIDv8 holds #{Layout::PAYLOAD_BITS}; trim #{-spare}"
       end
+
       return declarations if spare.zero?
 
       if declarations.last.kind == :random
@@ -125,6 +144,7 @@ module IronLion
       allowed = OPTIONS.fetch(kind)
       allowed += MODEL_OPTIONS if kind == :value && name == :model
       unknown = options.keys - allowed
+
       unless unknown.empty?
         accepts = allowed.empty? ? "no options" : allowed.map { "#{_1}:" }.join(", ")
         raise ConfigurationError,
@@ -133,13 +153,14 @@ module IronLion
 
       case kind
       when :time then { epoch_ms: epoch_ms(name, options.fetch(:epoch, 0)) }
-      when :value then value_options(name, options)
+      when :value, :text then value_options(name, options)
       else {}
       end
     end
 
     def value_options(name, options)
       normalized = {}
+
       if options.key?(:from)
         from = options[:from]
         unless from.respond_to?(:call)
@@ -148,6 +169,7 @@ module IronLion
 
         normalized[:from] = from
       end
+
       normalized[:table] = model_table(options[:table]) if name == :model
       normalized
     end

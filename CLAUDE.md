@@ -16,7 +16,8 @@ code, not SQL. See README.md for the public API.
 - **Always time-sortable.** A single time field leads every format (implied
   `created_at`, 48 bits of milliseconds).
 - **Name-first DSL** (`tenant bits: 20`). The keyword gives the kind (`bits:` value,
-  `time:`, `counter:`, `random:`). Built-in names: `created_at`, `sequence`,
+  `time:`, `counter:`, `random:`, and `chars:` for alphanumeric text in
+  bijective base 36, sized in characters). Built-in names: `created_at`, `sequence`,
   `random`, `model`.
 - **Infer from the environment; minimise programmer input.** Values resolve
   from an explicit argument, then the record, then a `from:` resolver, then
@@ -33,6 +34,7 @@ code, not SQL. See README.md for the public API.
 - `lib/iron_lion/declaration.rb`: DSL line parsing and whole-format arrangement
 - `lib/iron_lion/builder.rb`: BasicObject DSL receiver
 - `lib/iron_lion/format.rb`: generation and decoding
+- `lib/iron_lion/base36.rb`: string <-> integer packing for `chars:` fields
 - `lib/iron_lion/layout.rb`: bit placement around the version/variant bits, string forms
 - `lib/iron_lion/resolver.rb`: value resolution chain
 - `lib/iron_lion/clock.rb`: monotonic (ms, sequence) pairs

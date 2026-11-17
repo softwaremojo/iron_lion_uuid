@@ -11,6 +11,10 @@ AllCops:
 Style/StringLiterals:
   EnforcedStyle: double_quotes
 
+# Write `offset: offset` where the shorthand `offset:` would hide what is passed.
+Style/HashSyntax:
+  EnforcedShorthandSyntax: either
+
 Style/Documentation:
   Exclude:
     - spec/**/*
@@ -25,6 +29,9 @@ Metrics/AbcSize:
   Max: 25
 
 Metrics/ModuleLength:
+  Max: 150
+
+Metrics/ClassLength:
   Max: 150
 
 Metrics/BlockLength:

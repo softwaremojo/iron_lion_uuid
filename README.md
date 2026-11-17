@@ -45,6 +45,11 @@ The keyword gives the kind and its value gives the width:
 | `minted_at time: 46` | time | milliseconds since `epoch:` (default: Unix epoch) |
 | `serial counter: 12` | counter | increases within a millisecond, per process |
 | `salt random: 8` | random | secure random bits |
+| `subdomain chars: 6` | text | an alphanumeric string of up to 6 characters |
+
+Text fields size themselves: 5 characters take 26 bits and 6 take 32. Strings
+are case-insensitive and decode in lowercase. They use bijective base 36, so
+`"abc"` and `"0abc"` stay distinct. Hyphens and other punctuation are rejected.
 
 Some names come with built-in behaviour when declared with `bits:`:
 

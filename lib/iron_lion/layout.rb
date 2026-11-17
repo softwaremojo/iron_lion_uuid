@@ -31,6 +31,7 @@ module IronLion
       unless uuid.is_a?(Integer) && uuid.between?(0, (1 << 128) - 1)
         raise ParseError, "#{uuid.inspect} is not a 128-bit integer"
       end
+
       unless (uuid >> 76) & 0xF == VERSION && (uuid >> 62) & 0b11 == VARIANT
         raise ParseError, "#{hyphenate(uuid)} is not a UUIDv8, so it was not minted by IronLion"
       end
