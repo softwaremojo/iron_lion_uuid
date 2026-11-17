@@ -49,6 +49,7 @@ module IronLion
       case value
       when Time then value.strftime("%Y-%m-%d %H:%M:%S.%L UTC")
       when Module then value.name
+      when Location then value.geohash
       else value.inspect
       end
     end

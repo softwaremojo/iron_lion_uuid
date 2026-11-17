@@ -46,10 +46,35 @@ The keyword gives the kind and its value gives the width:
 | `serial counter: 12` | counter | increases within a millisecond, per process |
 | `salt random: 8` | random | secure random bits |
 | `subdomain chars: 6` | text | an alphanumeric string of up to 6 characters |
+| `cell h3: 9` | h3 | an [H3](https://h3geo.org) cell at resolution 9 |
+| `spot geohash: 8` | geohash | a position, rounded to an 8-character geohash cell |
 
-Text fields size themselves: 5 characters take 26 bits and 6 take 32. Strings
-are case-insensitive and decode in lowercase. They use bijective base 36, so
+The last three size themselves from the precision you give.
+
+**Text fields:** 5 characters take 26 bits and 6 take 32. Strings are
+case-insensitive and decode in lowercase. They use bijective base 36, so
 `"abc"` and `"0abc"` stay distinct. Hyphens and other punctuation are rejected.
+
+**H3 fields** store only what varies at their resolution: the base cell plus 3
+bits per level, so `h3: 7` takes 28 bits, `h3: 9` 34 and `h3: 12` 43. They take
+a cell index as an integer or hex string. A finer cell is trimmed to its parent.
+They decode to the cell's canonical H3 string (`"8928308280fffff"`). To store
+coordinates, convert them to a cell first, for example with the `h3` gem in a
+`from:` resolver.
+
+**Geohash fields** take 5 bits per character and accept a geohash string,
+`[lat, lon]`, `{lat:, lon:}` or anything that responds to
+`latitude`/`longitude`, `lat`/`lng` or `lat`/`lon`. A record with its own
+coordinates fills the field without being asked. They decode to an
+`IronLion::Location`, the cell's centre, with `lat`, `lon`, `to_a`, the
+`geohash` string and the error in each direction.
+
+| `geohash:` | Bits | Cell size |
+|---|---|---|
+| 6 | 30 | 1.2 km × 0.6 km |
+| 7 | 35 | 153 m × 153 m |
+| 8 | 40 | 38 m × 19 m |
+| 9 | 45 | 4.8 m × 4.8 m |
 
 Some names come with built-in behaviour when declared with `bits:`:
 

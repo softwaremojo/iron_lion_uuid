@@ -14,10 +14,21 @@ module IronLion
 
     def model? = kind == :value && name == :model
 
+    # The width as it was declared, e.g. "bits: 20", "chars: 6", "h3: 9".
+    def declared_width
+      case kind
+      when :text then "chars: #{options[:chars]}"
+      when :h3 then "h3: #{options[:resolution]}"
+      when :geohash then "geohash: #{options[:chars]}"
+      else "bits: #{bits}"
+      end
+    end
+
     def to_h
       spec = { name:, kind:, bits:, offset: }
       spec[:epoch_ms] = options[:epoch_ms] if kind == :time
-      spec[:chars] = options[:chars] if kind == :text
+      spec[:chars] = options[:chars] if %i[text geohash].include?(kind)
+      spec[:resolution] = options[:resolution] if kind == :h3
       spec
     end
   end

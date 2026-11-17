@@ -16,8 +16,9 @@ code, not SQL. See README.md for the public API.
 - **Always time-sortable.** A single time field leads every format (implied
   `created_at`, 48 bits of milliseconds).
 - **Name-first DSL** (`tenant bits: 20`). The keyword gives the kind (`bits:` value,
-  `time:`, `counter:`, `random:`, and `chars:` for alphanumeric text in
-  bijective base 36, sized in characters). Built-in names: `created_at`, `sequence`,
+  `time:`, `counter:`, `random:`), or a self-sizing kind declared by precision:
+  `chars:` (alphanumeric text, bijective base 36), `h3:` (resolution; stores
+  base cell + digits) and `geohash:` (characters; interleaved lat/lon bits). Built-in names: `created_at`, `sequence`,
   `random`, `model`.
 - **Infer from the environment; minimise programmer input.** Values resolve
   from an explicit argument, then the record, then a `from:` resolver, then
@@ -35,6 +36,8 @@ code, not SQL. See README.md for the public API.
 - `lib/iron_lion/builder.rb`: BasicObject DSL receiver
 - `lib/iron_lion/format.rb`: generation and decoding
 - `lib/iron_lion/base36.rb`: string <-> integer packing for `chars:` fields
+- `lib/iron_lion/h3.rb`: H3 cell <-> compact bits for `h3:` fields
+- `lib/iron_lion/geohash.rb`: coordinates/geohash <-> bits, and `Location`, for `geohash:` fields
 - `lib/iron_lion/layout.rb`: bit placement around the version/variant bits, string forms
 - `lib/iron_lion/resolver.rb`: value resolution chain
 - `lib/iron_lion/clock.rb`: monotonic (ms, sequence) pairs
@@ -54,11 +57,17 @@ clears all `IRON_LION_*` variables around each example.
 
 ## Roadmap
 
-1. Ruby core: done.
-2. Rails integration: assign ids before create, default the model table to
-   `config/iron_lion.yml` (read-only in production), `id.record` lookup, and a
-   generator for UUID primary keys.
-3. Postgres function generator from `Format#to_h`.
-4. Rust crate sharing a test-vector suite with Ruby.
+1. Ruby core, including text and spatial kinds: done.
+2. Postgres generation from `Format#to_h`: one shared sequence feeding the
+   counter, an `iron_lion_uuid(...)` function with the same bit packing as Ruby,
+   and a `BEFORE INSERT` trigger per table that fills a NULL id from the row's
+   own columns (same naming conventions as the Ruby resolver). The model number
+   is fixed in each table's trigger, and `node` comes from a database setting
+   (`iron_lion.node`). ActiveRecord leaves a nil id out of the INSERT and reads
+   it back with `RETURNING`, so the database assigns ids in Rails. Postgres only
+   for now; other databases fall back to Ruby generation.
+3. Rails integration: `rails g iron_lion:install` migration, the model table at
+   `config/iron_lion.yml` (read-only in production), and `id.record` lookup.
+4. Rust crate (H3 via `h3o`) sharing a test-vector suite with Ruby and SQL.
 
 License: MIT.

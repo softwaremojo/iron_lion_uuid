@@ -40,8 +40,8 @@ RSpec.describe "Alphanumeric text fields" do
     end
 
     it "rejects widths that cannot fit" do
-      expect { IronLion.define { code chars: 24 } }.to raise_error(IronLion::ConfigurationError, /1..23 chars/)
-      expect { IronLion.define { code chars: 0 } }.to raise_error(IronLion::ConfigurationError, /1..23 chars/)
+      expect { IronLion.define { code chars: 24 } }.to raise_error(IronLion::ConfigurationError, /chars: 1..23/)
+      expect { IronLion.define { code chars: 0 } }.to raise_error(IronLion::ConfigurationError, /chars: 1..23/)
     end
 
     it "describes the field in chars when no value is found" do

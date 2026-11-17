@@ -137,6 +137,8 @@ module IronLion
       when :value
         field.model? ? field.options[:table].model_for(raw) : raw
       when :text then Base36.decode(raw)
+      when :h3 then H3.decode(raw, field.options[:resolution])
+      when :geohash then Geohash.decode(raw, field.options[:chars])
       else raw
       end
     end

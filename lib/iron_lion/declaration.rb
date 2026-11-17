@@ -7,8 +7,23 @@ module IronLion
     Proto = Data.define(:name, :kind, :bits, :options)
 
     # The keyword names the kind; its value is the width in bits, except for
-    # `chars:`, whose value is a maximum string length.
-    KIND_KEYWORDS = { bits: :value, time: :time, counter: :counter, random: :random, chars: :text }.freeze
+    # the self-sizing kinds below.
+    KIND_KEYWORDS = {
+      bits: :value, time: :time, counter: :counter, random: :random,
+      chars: :text, h3: :h3, geohash: :geohash
+    }.freeze
+
+    # Kinds declared by a precision people think in, which IronLion turns
+    # into bits: `subdomain chars: 6`, `cell h3: 9`, `spot geohash: 8`.
+    Sized = Data.define(:kind, :option, :unit, :range, :bits)
+
+    SIZED = {
+      chars: Sized.new(kind: :text, option: :chars, unit: "chars", range: 1..23, bits: ->(n) { Base36.bits(n) }),
+      h3: Sized.new(kind: :h3, option: :resolution, unit: "resolution", range: H3::RESOLUTIONS,
+                    bits: ->(n) { H3.bits(n) }),
+      geohash: Sized.new(kind: :geohash, option: :chars, unit: "chars", range: Geohash::RESOLUTIONS,
+                         bits: ->(n) { Geohash.bits(n) })
+    }.freeze
 
     # Field names that carry built-in behaviour when declared with `bits:`.
     NAMED_KINDS = { created_at: :time, sequence: :counter, random: :random }.freeze
@@ -16,7 +31,10 @@ module IronLion
     # Fields that may be declared without a width.
     DEFAULT_BITS = { created_at: 48 }.freeze
 
-    OPTIONS = { value: %i[from], text: %i[from], time: %i[epoch], counter: [], random: [] }.freeze
+    OPTIONS = {
+      value: %i[from], text: %i[from], h3: %i[from], geohash: %i[from],
+      time: %i[epoch], counter: [], random: []
+    }.freeze
     MODEL_OPTIONS = %i[table].freeze
 
     NAME = /\A[a-z_][a-z0-9_]*\z/
@@ -34,7 +52,7 @@ module IronLion
     def parse(name, options)
       validate_name!(name)
       keyword = kind_keyword(name, options)
-      return parse_text(name, options) if keyword == :chars
+      return parse_sized(name, keyword, options) if SIZED.key?(keyword)
 
       bits = keyword ? options[keyword] : DEFAULT_BITS[name]
       raise ConfigurationError, "#{name} needs a width, e.g. `#{name} bits: 16`" if bits.nil?
@@ -44,17 +62,18 @@ module IronLion
       Proto.new(name:, kind:, bits:, options: normalize(name, kind, options.except(*KIND_KEYWORDS.keys)))
     end
 
-    # `subdomain chars: 6` sizes itself: enough bits for any alphanumeric
-    # string of up to 6 characters.
-    def parse_text(name, options)
-      chars = options[:chars]
-      longest = (1..).find { Base36.bits(_1 + 1) > Layout::PAYLOAD_BITS }
-      unless chars.is_a?(Integer) && chars.between?(1, longest)
-        raise ConfigurationError, "#{name} must be 1..#{longest} chars, not #{chars.inspect}"
+    # Self-sizing kinds work out their own bits from the declared precision.
+    def parse_sized(name, keyword, options)
+      sized = SIZED.fetch(keyword)
+      size = options[keyword]
+
+      unless size.is_a?(Integer) && sized.range.cover?(size)
+        raise ConfigurationError,
+              "#{name} must be #{keyword}: #{sized.range.min}..#{sized.range.max} (#{sized.unit}), not #{size.inspect}"
       end
 
-      options = normalize(name, :text, options.except(:chars)).merge(chars:)
-      Proto.new(name:, kind: :text, bits: Base36.bits(chars), options:)
+      options = normalize(name, sized.kind, options.except(keyword)).merge(sized.option => size)
+      Proto.new(name:, kind: sized.kind, bits: sized.bits.call(size), options:)
     end
 
     # Checks a whole format's declarations and settles their order: one
@@ -153,7 +172,7 @@ module IronLion
 
       case kind
       when :time then { epoch_ms: epoch_ms(name, options.fetch(:epoch, 0)) }
-      when :value, :text then value_options(name, options)
+      when :value, :text, :h3, :geohash then value_options(name, options)
       else {}
       end
     end
