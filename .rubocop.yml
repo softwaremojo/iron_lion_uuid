@@ -3,6 +3,9 @@ plugins:
   - rubocop-rake
   - rubocop-rspec
 
+require:
+  - ./rubocop/cop/iron_lion/raise_library_error
+
 AllCops:
   TargetRubyVersion: 3.2
   NewCops: enable
@@ -48,6 +51,12 @@ RSpec/MultipleExpectations:
   Enabled: false
 RSpec/ExampleLength:
   Max: 15
+# RuboCop's own cop-spec helpers are expectations too.
+RSpec:
+  Language:
+    Expectations:
+      - expect_offense
+      - expect_no_offenses
 RSpec/NoExpectationExample:
   AllowedPatterns:
     - ^rejects
@@ -55,3 +64,14 @@ RSpec/NoExpectationExample:
 Style/Semicolon:
   Exclude:
     - spec/**/*
+
+# `rescue IronLion::Error` must catch every failure from the public API.
+IronLion/RaiseLibraryError:
+  Include:
+    - lib/**/*.rb
+  # These raise ArgumentError internally on purpose; Resolver converts it
+  # into InvalidValueError at the public boundary.
+  Exclude:
+    - lib/iron_lion/base36.rb
+    - lib/iron_lion/h3.rb
+    - lib/iron_lion/geohash.rb
