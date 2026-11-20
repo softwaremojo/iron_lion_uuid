@@ -43,7 +43,9 @@ code, not SQL. See README.md for the public API.
 - `lib/iron_lion/resolver.rb`: value resolution chain
 - `lib/iron_lion/clock.rb`: monotonic (ms, sequence) pairs
 - `lib/iron_lion/model_table.rb`: append-only model-number table (YAML)
-- `lib/iron_lion/id.rb`: the id value object
+- `lib/iron_lion/id.rb`: the id value object (`#record` finds its row)
+- `lib/iron_lion/installer.rb`: installs functions + triggers through an ActiveRecord connection
+- `lib/iron_lion/railtie.rb`, `tasks/iron_lion.rake`, `lib/generators/iron_lion/`: Rails integration
 
 ## Commands
 
@@ -56,8 +58,8 @@ bundle exec rubocop
 `.envrc` exports `IRON_LION_NODE=53` for local experiments. The spec suite
 clears all `IRON_LION_*` variables around each example.
 
-Postgres specs (tagged `:postgres`) run against `IRON_LION_TEST_DATABASE_URL`
-(default `dbname=iron_lion_test`), each in a rolled-back transaction with its
+Postgres specs (tagged `:postgres`, and `:active_record` for the installer) run against `IRON_LION_TEST_DATABASE_URL`
+(default `postgres:///iron_lion_test`), each in a rolled-back transaction with its
 own schema, and are skipped without a database. Locally, Homebrew's
 `postgresql@17` is running but keg-only: its binaries are in
 `/opt/homebrew/opt/postgresql@17/bin`.
@@ -73,8 +75,18 @@ own schema, and are skipped without a database. Locally, Homebrew's
    `iron_lion.<field>` settings play the role of ENV. ActiveRecord leaves a nil
    id to the database and reads it back with `RETURNING`. Postgres only; other
    databases fall back to Ruby generation.
-3. Rails integration: `rails g iron_lion:install` migration, the model table at
-   `config/iron_lion.yml` (read-only in production), and `id.record` lookup.
+3. Rails integration: done. `IronLion::Railtie` points the default model table at
+   `config/iron_lion.yml` (assigning only when `Rails.env.local?`) and prepends
+   `IronLion::DatabaseTasks` to ActiveRecord's DatabaseTasks so `migrate` and
+   `load_schema` rerun `IronLion::Installer`. The installer triggers every
+   model table whose primary key is a uuid with no default. The generator
+   (`lib/generators/iron_lion/`) writes the initializer and `config/iron_lion.yml`.
+   `Id#record` / `IronLion.find` fetch an id's row through its model field.
 4. Rust crate (H3 via `h3o`) sharing a test-vector suite with Ruby and SQL.
 
 License: MIT.
+
+To check the Rails integration end to end, generate a throwaway app outside the
+repo (`rails new … --minimal --database=postgresql`). Add this gem by `path:`,
+then run the generator, a migration and `bin/rails test`. The suite covers
+everything except the Railtie, the generator and the schema-load hook.

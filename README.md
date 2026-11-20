@@ -128,6 +128,13 @@ from elsewhere, pass a different one:
 IronLion.parse(id, format: IronLion.define { shard bits: 74 })
 ```
 
+When the format has a `model` field, an id can fetch its own record:
+
+```ruby
+IronLion.find("01A1F64F-62A3-8004-8010-1073676D6B05")   # => #<Order id: "01a1f64f-…">
+IronLion.parse(id).record                              # the same
+```
+
 ## Models
 
 Each model gets a small permanent number that fits the `model` field. Point the
@@ -149,9 +156,46 @@ assign: false)` where the table must be read-only, such as production; there,
 an unknown model raises. A class can choose its own number by defining
 `.iron_lion_model_id`.
 
+## Rails
+
+```bash
+bin/rails generate iron_lion:install
+```
+
+This writes `config/initializers/iron_lion.rb` (your format) and
+`config/iron_lion.yml` (model numbers). After that, a table gets IronLion ids by
+having a uuid primary key with no default:
+
+```ruby
+create_table :orders, id: :uuid, default: nil do |t|
+  t.bigint :tenant_id
+end
+```
+
+```ruby
+order = Order.create!(tenant_id: 4211)
+IronLion.parse(order.id)
+# => #<IronLion::Id 01a1f64f-… created_at=2026-11-20 00:16:00.163 UTC model=Order tenant=4211 sequence=1>
+```
+
+There is nothing to add to models. Postgres assigns the id when the row is
+inserted, and ActiveRecord reads it back.
+
+- **Triggers maintain themselves.** After every migration and schema load,
+  IronLion reinstalls its functions and puts a trigger on each table whose model
+  has a uuid key with no default. `schema.rb` doesn't record functions or
+  triggers, so this keeps a test database loaded from `schema.rb` working.
+  `bin/rails iron_lion:install` does the same by hand and reports each table.
+- **Default uuid keys are left alone.** A uuid key that defaults to
+  `gen_random_uuid()` (Rails' default for `id: :uuid`) keeps its default. The
+  install report names those tables, so an omission is easy to spot.
+- **Model numbers come from `config/iron_lion.yml`.** New models are numbered in
+  development and test. Everywhere else the file is read-only, and a model that
+  was never numbered raises with instructions. Commit the file.
+
 ## Postgres
 
-Postgres can mint the same ids from the same format, so rows inserted
+Outside Rails, generate the SQL yourself. Postgres can mint the same ids from the same format, so rows inserted
 anywhere (by ActiveRecord, raw SQL, bulk loads or other services) get proper
 ids.
 
@@ -210,5 +254,5 @@ bundle exec rake          # specs and RuboCop
 ```
 
 The Postgres specs use `IRON_LION_TEST_DATABASE_URL` (default
-`dbname=iron_lion_test`). Each example runs in a transaction that is rolled back.
+`postgres:///iron_lion_test`). Each example runs in a transaction that is rolled back.
 Without a database they are skipped.

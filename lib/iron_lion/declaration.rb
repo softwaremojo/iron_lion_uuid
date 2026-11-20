@@ -196,8 +196,8 @@ module IronLion
     def model_table(table)
       case table
       when ModelTable then table
-      when nil then ModelTable.new
-      when String, Pathname then ModelTable.new(table)
+      when nil then ModelTable.default
+      when String, Pathname then ModelTable.new(table, assign: ModelTable.default_assign)
       else raise ConfigurationError, "model table: must be a path or an IronLion::ModelTable"
       end
     end

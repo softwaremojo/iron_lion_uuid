@@ -26,6 +26,19 @@ module IronLion
 
     def to_h = format.fields.to_h { [_1.name, self[_1.name]] }
 
+    # The record this id belongs to, found through its model field:
+    # IronLion.parse(uuid).record # => #<Order id: "01a1…">
+    def record
+      unless format.field_names.include?(:model)
+        raise Error, "this format has no model field, so an id cannot say which record it names"
+      end
+
+      model = self[:model]
+      return model.find(to_s) if model.respond_to?(:find)
+
+      raise Error, "#{self} names model #{model.inspect}, which is not a loaded class that can find records"
+    end
+
     def <=>(other)
       to_i <=> other.to_i if other.is_a?(Id)
     end

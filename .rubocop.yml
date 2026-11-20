@@ -7,6 +7,9 @@ AllCops:
   TargetRubyVersion: 3.2
   NewCops: enable
   SuggestExtensions: false
+  Exclude:
+    - lib/generators/**/templates/**/*
+    - vendor/**/*
 
 Style/StringLiterals:
   EnforcedStyle: double_quotes

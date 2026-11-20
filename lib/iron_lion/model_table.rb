@@ -19,6 +19,18 @@ module IronLion
       # model forever. Rename a model by changing its key, never its number.
     YAML
 
+    class << self
+      # Where a format's model table lives when it does not say, and whether
+      # it may number new models. In Rails: config/iron_lion.yml, assigning
+      # only in development and test.
+      attr_accessor :default_path
+      attr_writer :default_assign
+
+      def default_assign = @default_assign.nil? || @default_assign
+
+      def default = new(default_path, assign: default_assign)
+    end
+
     attr_reader :path
     attr_writer :assign
 
@@ -39,7 +51,8 @@ module IronLion
 
         unless @assign
           raise UnknownModelError,
-                "#{name} has no IronLion model id#{" in #{path}" if path}, and this table is not assigning new ones"
+                "#{name} has no IronLion model id#{" in #{path}" if path}, and new ids are not issued here. " \
+                "Create a #{name} where they are (in Rails: development or test) and commit the table."
         end
 
         path ? assign_in_file(name, capacity) : assign_in_memory(name, capacity)

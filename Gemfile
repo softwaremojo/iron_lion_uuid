@@ -8,6 +8,7 @@ gemspec
 gem "bigdecimal"
 
 group :development, :test do
+  gem "activerecord", "~> 8.0"
   gem "pg", "~> 1.5"
   gem "rake", "~> 13.0"
   gem "rspec", "~> 3.13"

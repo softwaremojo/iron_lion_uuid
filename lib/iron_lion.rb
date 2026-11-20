@@ -21,6 +21,7 @@ require_relative "iron_lion/resolver"
 require_relative "iron_lion/id"
 require_relative "iron_lion/format"
 require_relative "iron_lion/postgres"
+require_relative "iron_lion/installer"
 
 # IronLion mints time-sortable UUIDv8s that carry the facts you need to debug
 # them: when, which model, which node, which tenant.
@@ -69,9 +70,16 @@ module IronLion
       format.parse(input)
     end
 
+    # Finds the record an id belongs to: paste a UUID, get the row.
+    def find(input, format: self.format)
+      parse(input, format:).record
+    end
+
     # Forgets the configured format. Intended for test suites.
     def reset!
       @format = nil
     end
   end
 end
+
+require_relative "iron_lion/railtie" if defined?(Rails::Railtie)

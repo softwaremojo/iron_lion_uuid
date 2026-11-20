@@ -5,7 +5,7 @@
 # Set IRON_LION_TEST_DATABASE_URL to point elsewhere; without a reachable
 # database the examples are skipped.
 module PostgresHelpers
-  DATABASE = ENV.fetch("IRON_LION_TEST_DATABASE_URL", "dbname=iron_lion_test")
+  DATABASE = ENV.fetch("IRON_LION_TEST_DATABASE_URL", "postgres:///iron_lion_test")
 
   def self.connection
     return @connection if defined?(@connection)
