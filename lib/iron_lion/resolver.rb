@@ -10,7 +10,8 @@ module IronLion
   #   4. ENV["IRON_LION_TENANT"]                  the environment
   #
   # The `model` field reads the record's class instead of its attributes,
-  # and accepts classes or class names as well as integers. A `geohash:`
+  # and accepts classes or class names as well as integers. An ActiveRecord
+  # class is numbered by its base_class, so STI subclasses share a number. A `geohash:`
   # field also accepts a record that has coordinates itself
   # (#latitude/#longitude, #lat/#lng or #lat/#lon).
   # nil never counts as an answer: it means "ask the next source".
@@ -107,6 +108,9 @@ module IronLion
       case value
       when Integer then value
       when Module
+        # Single-table inheritance shares one table, so a subclass (Car) takes
+        # its base class's (Vehicle's) number, as the Postgres trigger does.
+        value = value.base_class if value.respond_to?(:base_class)
         return value.iron_lion_model_id if value.respond_to?(:iron_lion_model_id)
         raise InvalidValueError, "#{value.inspect} is anonymous; only named classes get model ids" unless value.name
 

@@ -28,6 +28,7 @@ module IronLion
       iron_lion_uuid iron_lion_assign_id iron_lion_setting iron_lion_missing iron_lion_int_bits
       iron_lion_text_bits iron_lion_h3_bits iron_lion_geohash iron_lion_geohash_bits
       iron_lion_random_bits iron_lion_to_uuid iron_lion_row iron_lion_row_h3 iron_lion_row_geohash
+      iron_lion_row_model
     ].freeze
 
     PARAMETER_TYPES = {
@@ -185,7 +186,8 @@ module IronLion
       when :geohash
         "coalesce(iron_lion_row(_row, #{columns}), iron_lion_row_geohash(_row, #{field.options[:chars]}))"
       when :value
-        return "nullif(TG_ARGV[1], '')::numeric" if field.model?
+        # The row's own model number wins over the table's, as in Ruby.
+        return "coalesce(iron_lion_row_model(_row, #{columns}), nullif(TG_ARGV[1], '')::numeric)" if field.model?
 
         "iron_lion_row(_row, #{columns})::numeric"
       else "iron_lion_row(_row, #{columns})"
