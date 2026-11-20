@@ -90,3 +90,17 @@ To check the Rails integration end to end, generate a throwaway app outside the
 repo (`rails new … --minimal --database=postgresql`). Add this gem by `path:`,
 then run the generator, a migration and `bin/rails test`. The suite covers
 everything except the Railtie, the generator and the schema-load hook.
+
+## Agent skills
+
+### Issue tracker
+
+Issues live in GitHub Issues for softwaremojo/iron_lion_uuid, via the gh CLI. See `docs/agents/issue-tracker.md`.
+
+### Triage labels
+
+The five default labels: needs-triage, needs-info, ready-for-agent, ready-for-human, wontfix. See `docs/agents/triage-labels.md`.
+
+### Domain docs
+
+Single-context: `GLOSSARY.md` and `docs/adr/` at the repo root, created lazily. See `docs/agents/domain.md`.
