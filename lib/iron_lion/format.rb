@@ -36,6 +36,10 @@ module IronLion
 
     def field_names = @by_name.keys
 
+    # Fields with a `from:` resolver. Resolvers only run in Ruby, so ids for
+    # a format with any of them are minted in Ruby rather than by the database.
+    def from_fields = fields.reject { _1.options[:from].nil? }
+
     def generate(record = nil, **values)
       reject_unknown! values
       millisecond, sequence = timestamp(values)
