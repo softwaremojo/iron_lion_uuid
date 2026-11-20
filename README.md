@@ -274,4 +274,6 @@ bundle exec rake          # specs and RuboCop
 
 The Postgres specs use `IRON_LION_TEST_DATABASE_URL` (default
 `postgres:///iron_lion_test`). Each example runs in a transaction that is rolled back.
-Without a database they are skipped.
+Without a database they are skipped; set `IRON_LION_REQUIRE_DATABASE=1` to make
+them fail instead. CI runs the full suite against Postgres 17 on every PR, with
+that switch set.
