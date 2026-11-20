@@ -1,0 +1,3 @@
+# IronLion model ids. Append-only: once issued, an id belongs to that
+# model forever. Rename a model by changing its key, never its number.
+models: {}

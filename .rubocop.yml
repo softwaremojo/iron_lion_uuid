@@ -1,0 +1,57 @@
+plugins:
+  - rubocop-performance
+  - rubocop-rake
+  - rubocop-rspec
+
+AllCops:
+  TargetRubyVersion: 3.2
+  NewCops: enable
+  SuggestExtensions: false
+  Exclude:
+    - lib/generators/**/templates/**/*
+    - vendor/**/*
+
+Style/StringLiterals:
+  EnforcedStyle: double_quotes
+
+# Write `offset: offset` where the shorthand `offset:` would hide what is passed.
+Style/HashSyntax:
+  EnforcedShorthandSyntax: either
+
+Style/Documentation:
+  Exclude:
+    - spec/**/*
+
+Layout/LineLength:
+  Max: 120
+
+Metrics/MethodLength:
+  Max: 20
+
+Metrics/AbcSize:
+  Max: 25
+
+Metrics/ModuleLength:
+  Max: 175
+
+Metrics/ClassLength:
+  Max: 150
+
+Metrics/BlockLength:
+  Exclude:
+    - spec/**/*
+
+# Spec style: examples read as sentences about the library, not one class.
+RSpec/DescribeClass:
+  Enabled: false
+RSpec/MultipleExpectations:
+  Enabled: false
+RSpec/ExampleLength:
+  Max: 15
+RSpec/NoExpectationExample:
+  AllowedPatterns:
+    - ^rejects
+# One-line format declarations in specs read best as `a bits: 4; b bits: 4`.
+Style/Semicolon:
+  Exclude:
+    - spec/**/*
