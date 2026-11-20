@@ -9,6 +9,9 @@ module IronLion
   # IronLion.configure has not been called.
   class NotConfiguredError < ConfigurationError; end
 
+  # A field name is not one of the format's fields.
+  class UnknownFieldError < Error; end
+
   # No source could supply a value for a field.
   class MissingValueError < Error; end
 
