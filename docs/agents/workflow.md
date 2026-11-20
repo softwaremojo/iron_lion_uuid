@@ -28,6 +28,9 @@ what is specific to their task; everything here applies to all of them.
   session's branch.
 - Open the PR against `main`, with `Closes #<n>` in the body. In the body, list
   each acceptance criterion and how you met it.
+- PRs are squash-merged: the PR title becomes the commit subject on `main` and
+  the PR body its message. Write them as a good commit message, and edit them
+  when the change does; branch commit messages don't reach `main`.
 - Keep the change to what the issue asks. `README.md` and `CLAUDE.md` are shared
   by every PR, so keep edits there small and local. When they conflict on
   rebase, keep both sides' meaning.
@@ -50,10 +53,12 @@ what is specific to their task; everything here applies to all of them.
 ## Merging
 
 - **CI must be green.** The workflow runs `bundle exec rake` against Postgres on
-  every PR.
+  every PR, and again on each merge-queue group.
 - **The orchestrator must have confirmed the acceptance criteria.** Once it
-  has, the session merges its own PR with GitHub's default merge, then deletes
-  its branch.
+  has, the session queues its own PR with `gh pr merge <n> --squash --auto`.
+  The merge queue merges it once `test` passes and GitHub deletes the branch.
+  If the queue drops the PR (a failure against newer `main`), fix it and queue
+  it again.
 - Until then, open the PR, report, and stop.
 
 ## Reporting
