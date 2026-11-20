@@ -2,6 +2,8 @@ name: CI
 
 on:
   pull_request:
+  # The main ruleset's merge queue requires `test` on each merge group.
+  merge_group:
   push:
     branches: [main]
 
