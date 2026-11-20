@@ -7,7 +7,7 @@ require:
   - ./rubocop/cop/iron_lion/raise_library_error
 
 AllCops:
-  TargetRubyVersion: 3.2
+  TargetRubyVersion: 3.3
   NewCops: enable
   SuggestExtensions: false
   Exclude:

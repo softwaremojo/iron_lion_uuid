@@ -8,8 +8,14 @@ on:
     branches: [main]
 
 jobs:
-  test:
+  suite:
+    name: Ruby ${{ matrix.ruby }}
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        # Every version iron_lion_uuid.gemspec's required_ruby_version allows.
+        ruby: ["3.3", "3.4", "4.0"]
     services:
       postgres:
         image: postgres:17
@@ -30,6 +36,20 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: ruby/setup-ruby@be3c7df29b3349ec6bcfc6b4792f1cf9f5237d18 # v1.343.0
         with:
-          ruby-version: "4.0"
+          ruby-version: ${{ matrix.ruby }}
           bundler-cache: true
       - run: bundle exec rake
+
+  # The main ruleset requires a check named `test`. It passes only when the
+  # suite passed on every Ruby in the matrix.
+  test:
+    needs: suite
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check every Ruby passed
+        env:
+          SUITE_RESULT: ${{ needs.suite.result }}
+        run: |
+          echo "suite: $SUITE_RESULT"
+          test "$SUITE_RESULT" = success
