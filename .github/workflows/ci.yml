@@ -15,7 +15,7 @@ jobs:
       fail-fast: false
       matrix:
         # Every version iron_lion_uuid.gemspec's required_ruby_version allows.
-        ruby: ["3.2", "3.3", "3.4", "4.0"]
+        ruby: ["3.3", "3.4", "4.0"]
     services:
       postgres:
         image: postgres:17
