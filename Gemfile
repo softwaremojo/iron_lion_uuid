@@ -16,6 +16,5 @@ group :development, :test do
   gem "rubocop-performance", "~> 1.17"
   gem "rubocop-rake", "~> 0.6"
   gem "rubocop-rspec", "~> 3.0"
-  gem "solargraph", "~> 0.56"
   gem "tapioca", "~> 0.16"
 end
