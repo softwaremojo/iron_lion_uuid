@@ -57,7 +57,7 @@ RSpec.describe "Generating and parsing" do
     it "reads fields by method or by name" do
       expect(id[:tenant]).to eq(id.tenant)
       expect(id["node"]).to eq(53)
-      expect { id[:nope] }.to raise_error(KeyError, /no nope field/)
+      expect { id[:nope] }.to raise_error(IronLion::UnknownFieldError, /no nope field/)
     end
 
     it "is a string where a string is expected" do
@@ -80,12 +80,17 @@ RSpec.describe "Generating and parsing" do
 
   describe "mistakes" do
     it "rejects unknown fields, catching typos" do
-      expect { IronLion.generate(tenat: 1) }.to raise_error(ArgumentError, /unknown field :tenat/)
+      expect { IronLion.generate(tenat: 1) }.to raise_error(IronLion::UnknownFieldError, /unknown field :tenat/)
     end
 
     it "rejects values for generated fields" do
       expect { IronLion.generate(tenant: 1, model: "X", node: 1, sequence: 3) }
-        .to raise_error(ArgumentError, /sequence is generated/)
+        .to raise_error(IronLion::InvalidValueError, /sequence is generated/)
+    end
+
+    it "raises errors that rescue IronLion::Error catches" do
+      expect(IronLion::UnknownFieldError).to be < IronLion::Error
+      expect(IronLion::InvalidValueError).to be < IronLion::Error
     end
 
     it "rejects values too wide for their field" do
