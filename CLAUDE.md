@@ -115,3 +115,7 @@ The five default labels: needs-triage, needs-info, ready-for-agent, ready-for-hu
 ### Domain docs
 
 Single-context: `GLOSSARY.md` and `docs/adr/` at the repo root, created lazily. See `docs/agents/domain.md`.
+
+### Workflow
+
+Work happens through `ready-for-agent` issues: one session per issue, coordinated by an orchestrator session. Sessions merge their own PR once CI is green and the orchestrator has checked the acceptance criteria. See `docs/agents/workflow.md`.
