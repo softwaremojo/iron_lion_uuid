@@ -31,22 +31,17 @@ code, not SQL. See README.md for the public API.
 
 ## Layout
 
-- `lib/iron_lion.rb`: module API (`configure`, `define`, `generate`, `parse`)
-- `lib/iron_lion/declaration.rb`: DSL line parsing and whole-format arrangement
-- `lib/iron_lion/builder.rb`: BasicObject DSL receiver
-- `lib/iron_lion/format.rb`: generation and decoding
-- `lib/iron_lion/base36.rb`: string <-> integer packing for `chars:` fields
-- `lib/iron_lion/h3.rb`: H3 cell <-> compact bits for `h3:` fields
-- `lib/iron_lion/geohash.rb`: coordinates/geohash <-> bits, and `Location`, for `geohash:` fields
-- `lib/iron_lion/postgres.rb` + `postgres/helpers.sql`: SQL generation for Postgres
-- `lib/iron_lion/layout.rb`: bit placement around the version/variant bits, string forms
-- `lib/iron_lion/resolver.rb`: value resolution chain
-- `lib/iron_lion/clock.rb`: monotonic (ms, sequence) pairs
-- `lib/iron_lion/model_table.rb`: append-only model-number table (YAML)
-- `lib/iron_lion/id.rb`: the id value object (`#record` finds its row)
-- `lib/iron_lion/installer.rb`: installs functions + triggers through an ActiveRecord connection
-- `lib/iron_lion/record_ids.rb`: mints ids in Ruby before create when the format has `from:` resolvers
-- `lib/iron_lion/railtie.rb`, `tasks/iron_lion.rake`, `lib/generators/iron_lion/`: Rails integration
+Most files in `lib/iron_lion/` are named for what they do. The ones that aren't:
+
+- `declaration.rb`: DSL line parsing and whole-format arrangement; `builder.rb` is the
+  BasicObject DSL receiver
+- `layout.rb`: bit placement around the version/variant bits, and string forms
+- `clock.rb`: monotonic (ms, sequence) pairs
+- `model_table.rb`: append-only model-number table (YAML)
+- `base36.rb`, `h3.rb`, `geohash.rb`: packing for `chars:`, `h3:` and `geohash:` fields
+
+Before changing Postgres generation or its specs, read `docs/postgres.md`. Before
+changing the Railtie, installer, `RecordIds` or generator, read `docs/rails.md`.
 
 ## Commands
 
@@ -59,63 +54,22 @@ bundle exec rubocop
 `.envrc` exports `IRON_LION_NODE=53` for local experiments. The spec suite
 clears all `IRON_LION_*` variables around each example.
 
-Postgres specs (tagged `:postgres`, and `:active_record` for the installer) run against `IRON_LION_TEST_DATABASE_URL`
-(default `postgres:///iron_lion_test`), each in a rolled-back transaction with its
-own schema, and are skipped without a database. Locally, Homebrew's
-`postgresql@17` is running but keg-only: its binaries are in
-`/opt/homebrew/opt/postgresql@17/bin`.
+Postgres specs are tagged `:postgres` (and `:active_record` for the installer); see
+README.md § Development. Locally, Homebrew's `postgresql@17` is running but keg-only:
+its binaries are in `/opt/homebrew/opt/postgresql@17/bin`.
 
 ## Roadmap
 
-1. Ruby core, including text and spatial kinds: done.
-2. Postgres generation (`IronLion::Postgres`): done. Static helpers live in
-   `lib/iron_lion/postgres/helpers.sql`; the `iron_lion_uuid(...)` function and
-   the generic `iron_lion_assign_id()` trigger function are generated from the
-   format. The trigger reads the row as jsonb using the Ruby resolver's column
-   conventions; the model number and id column are trigger arguments (an
-   integer `iron_lion_model` column overrides the model). Both back ends number
-   STI subclasses by their `base_class`.
-   `iron_lion.<field>` settings play the role of ENV. The counter is the shared
-   `iron_lion_seq` modulo 2^bits (settled: keep it lock-free): unique below
-   2^bits ids per millisecond and sorted by millisecond, but in arbitrary order
-   within one. Only Ruby is strictly increasing, within one process. An explicit
-   `created_at` takes random counter bits in both back ends. ActiveRecord leaves a nil
-   id to the database and reads it back with `RETURNING`. Postgres only; other
-   databases fall back to Ruby generation.
-3. Rails integration: done. `IronLion::Railtie` points the default model table at
-   `config/iron_lion.yml` (assigning only when `Rails.env.local?`) and prepends
-   `IronLion::DatabaseTasks` to ActiveRecord's DatabaseTasks so `migrate` and
-   `load_schema` rerun `IronLion::Installer`. The installer triggers every
-   model table whose primary key is a uuid with no default. The generator
-   (`lib/generators/iron_lion/`) writes the initializer and `config/iron_lion.yml`.
-   `Id#record` / `IronLion.find` fetch an id's row through its model field.
-   When the format has any `from:` field, `IronLion::RecordIds` (included into
-   `ActiveRecord::Base` by the Railtie) mints ids in Ruby before create, since
-   the trigger can't run resolvers; the trigger stays for raw SQL. The
-   IronLion-table rule (uuid key, no default) is `Installer.iron_lion_table?`.
-4. Rust crate (H3 via `h3o`) sharing a test-vector suite with Ruby and SQL.
+Ruby core, Postgres generation and Rails integration are done. Next: a Rust crate
+(H3 via `h3o`) sharing a test-vector suite with Ruby and SQL.
 
 License: MIT.
 
-To check the Rails integration end to end, generate a throwaway app outside the
-repo (`rails new … --minimal --database=postgresql`). Add this gem by `path:`,
-then run the generator, a migration and `bin/rails test`. The suite covers
-everything except the Railtie, the generator and the schema-load hook.
-
 ## Agent skills
 
-### Issue tracker
-
-Issues live in GitHub Issues for softwaremojo/iron_lion_uuid, via the gh CLI. See `docs/agents/issue-tracker.md`.
-
-### Triage labels
-
-The five default labels: needs-triage, needs-info, ready-for-agent, ready-for-human, wontfix. See `docs/agents/triage-labels.md`.
-
-### Domain docs
-
-Single-context: `GLOSSARY.md` and `docs/adr/` at the repo root, created lazily. See `docs/agents/domain.md`.
-
-### Workflow
-
-Work happens through `ready-for-agent` issues: one session per issue, coordinated by an orchestrator session. Sessions merge their own PR once CI is green and the orchestrator has checked the acceptance criteria. See `docs/agents/workflow.md`.
+- Issues: GitHub Issues for softwaremojo/iron_lion_uuid, via the gh CLI. See `docs/agents/issue-tracker.md`.
+- Triage labels: needs-triage, needs-info, ready-for-agent, ready-for-human, wontfix. See `docs/agents/triage-labels.md`.
+- Domain docs: single-context, `GLOSSARY.md` and `docs/adr/` at the repo root, created lazily. See `docs/agents/domain.md`.
+- Workflow: one session per `ready-for-agent` issue, coordinated by an orchestrator
+  session. Sessions merge their own PR once CI is green and the orchestrator has
+  checked the acceptance criteria. See `docs/agents/workflow.md`.
