@@ -61,6 +61,15 @@ RSpec.describe IronLion::Postgres, :postgres do
       expect(decoded(uuid).created_at).to eq(past)
     end
 
+    it "takes a random counter for an explicit created_at, leaving iron_lion_seq alone" do
+      mint(tenant: 1, model: 1, node: 1, subdomain: "a")
+      sequence_state = -> { sql("SELECT last_value, is_called FROM iron_lion_seq") }
+      before = sequence_state.call
+
+      value("SELECT iron_lion_uuid(tenant => 1, model => 1, node => 1, subdomain => 'a', created_at => now())")
+      expect(sequence_state.call).to eq(before)
+    end
+
     it "falls back to iron_lion.* settings, the database's ENV" do
       sql("SET LOCAL iron_lion.node = '53'; SET LOCAL iron_lion.tenant = '9'")
       expect(decoded(mint(model: 1, subdomain: "a")).to_h).to include(node: 53, tenant: 9)
@@ -81,6 +90,23 @@ RSpec.describe IronLion::Postgres, :postgres do
       it { rejects(/tenant -1 does not fit/, **valid, tenant: -1) }
       it { rejects(/subdomain "my-sh" may only contain letters and digits/, **valid, subdomain: "my-sh") }
       it { rejects(/subdomain "toolong" is longer than 5 characters/, **valid, subdomain: "toolong") }
+    end
+  end
+
+  describe "a small counter" do
+    # No random bits: within a millisecond, only the counter tells ids apart.
+    let(:small) do
+      IronLion.define do
+        node     bits: 70
+        sequence bits: 4
+      end
+    end
+
+    before { install(small) }
+
+    it "keeps 2^bits consecutive ids distinct, though the counter wraps" do
+      ids = sql("SELECT iron_lion_uuid(node => 1) FROM generate_series(1, 16)").flatten
+      expect(ids.uniq.size).to eq(16)
     end
   end
 

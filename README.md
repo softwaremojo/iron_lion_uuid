@@ -236,11 +236,18 @@ SELECT iron_lion_uuid(tenant => 7, model => 3, subdomain => 'acme');
 
 - Valid RFC 9562 UUIDv8: 122 payload bits laid out around the version and
   variant bits.
-- Within a process, ids strictly increase. If a millisecond's sequence runs out,
-  or the system clock steps backwards, IronLion borrows the next millisecond
-  instead of blocking.
-- Across processes, the time, node and random bits keep ids unique; in Postgres,
-  `iron_lion_seq` does too.
+- Ids sort by creation time, to the millisecond, from either back end.
+- Ruby: within a process, ids strictly increase. If a millisecond's sequence
+  runs out, or the system clock steps backwards, IronLion borrows the next
+  millisecond instead of blocking. Across processes, the time, node and random
+  bits keep ids unique.
+- Postgres: the counter is the shared `iron_lion_seq` sequence modulo 2^bits,
+  so ids are unique across every connection while fewer than 2^bits are made
+  per millisecond. They sort by millisecond; within one millisecond their order
+  is arbitrary, since concurrent transactions have no meaningful order. The
+  sequence is lock-free and never blocks.
+- An explicit `created_at` (a backdated id) gets a random counter value in
+  both back ends, and leaves `iron_lion_seq` untouched.
 - Ruby and Postgres pack bits identically. The spec suite checks this against a
   real database.
 - `IronLion.format.to_h` describes the format as plain data.
