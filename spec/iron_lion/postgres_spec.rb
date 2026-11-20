@@ -203,7 +203,8 @@ RSpec.describe IronLion::Postgres, :postgres do
 
     it "explains what the row was missing" do
       db.exec("SAVEPOINT attempt")
-      expect { insert(subdomain: "x") }.to raise_error(PG::Error, /No value for tenant/)
+      expect { insert(subdomain: "x") }
+        .to raise_error(PG::Error, /No value for tenant\..*from: resolvers don't run in the database/m)
     ensure
       db.exec("ROLLBACK TO SAVEPOINT attempt")
     end

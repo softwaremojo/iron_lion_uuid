@@ -45,6 +45,7 @@ code, not SQL. See README.md for the public API.
 - `lib/iron_lion/model_table.rb`: append-only model-number table (YAML)
 - `lib/iron_lion/id.rb`: the id value object (`#record` finds its row)
 - `lib/iron_lion/installer.rb`: installs functions + triggers through an ActiveRecord connection
+- `lib/iron_lion/record_ids.rb`: mints ids in Ruby before create when the format has `from:` resolvers
 - `lib/iron_lion/railtie.rb`, `tasks/iron_lion.rake`, `lib/generators/iron_lion/`: Rails integration
 
 ## Commands
@@ -86,6 +87,10 @@ own schema, and are skipped without a database. Locally, Homebrew's
    model table whose primary key is a uuid with no default. The generator
    (`lib/generators/iron_lion/`) writes the initializer and `config/iron_lion.yml`.
    `Id#record` / `IronLion.find` fetch an id's row through its model field.
+   When the format has any `from:` field, `IronLion::RecordIds` (included into
+   `ActiveRecord::Base` by the Railtie) mints ids in Ruby before create, since
+   the trigger can't run resolvers; the trigger stays for raw SQL. The
+   IronLion-table rule (uuid key, no default) is `Installer.iron_lion_table?`.
 4. Rust crate (H3 via `h3o`) sharing a test-vector suite with Ruby and SQL.
 
 License: MIT.
