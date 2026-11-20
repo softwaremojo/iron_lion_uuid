@@ -72,7 +72,11 @@ own schema, and are skipped without a database. Locally, Homebrew's
    the generic `iron_lion_assign_id()` trigger function are generated from the
    format. The trigger reads the row as jsonb using the Ruby resolver's column
    conventions; the model number and id column are trigger arguments.
-   `iron_lion.<field>` settings play the role of ENV. ActiveRecord leaves a nil
+   `iron_lion.<field>` settings play the role of ENV. The counter is the shared
+   `iron_lion_seq` modulo 2^bits (settled: keep it lock-free): unique below
+   2^bits ids per millisecond and sorted by millisecond, but in arbitrary order
+   within one. Only Ruby is strictly increasing, within one process. An explicit
+   `created_at` takes random counter bits in both back ends. ActiveRecord leaves a nil
    id to the database and reads it back with `RETURNING`. Postgres only; other
    databases fall back to Ruby generation.
 3. Rails integration: done. `IronLion::Railtie` points the default model table at
