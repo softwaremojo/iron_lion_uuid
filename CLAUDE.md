@@ -38,6 +38,7 @@ code, not SQL. See README.md for the public API.
 - `lib/iron_lion/base36.rb`: string <-> integer packing for `chars:` fields
 - `lib/iron_lion/h3.rb`: H3 cell <-> compact bits for `h3:` fields
 - `lib/iron_lion/geohash.rb`: coordinates/geohash <-> bits, and `Location`, for `geohash:` fields
+- `lib/iron_lion/postgres.rb` + `postgres/helpers.sql`: SQL generation for Postgres
 - `lib/iron_lion/layout.rb`: bit placement around the version/variant bits, string forms
 - `lib/iron_lion/resolver.rb`: value resolution chain
 - `lib/iron_lion/clock.rb`: monotonic (ms, sequence) pairs
@@ -55,17 +56,23 @@ bundle exec rubocop
 `.envrc` exports `IRON_LION_NODE=53` for local experiments. The spec suite
 clears all `IRON_LION_*` variables around each example.
 
+Postgres specs (tagged `:postgres`) run against `IRON_LION_TEST_DATABASE_URL`
+(default `dbname=iron_lion_test`), each in a rolled-back transaction with its
+own schema, and are skipped without a database. Locally, Homebrew's
+`postgresql@17` is running but keg-only: its binaries are in
+`/opt/homebrew/opt/postgresql@17/bin`.
+
 ## Roadmap
 
 1. Ruby core, including text and spatial kinds: done.
-2. Postgres generation from `Format#to_h`: one shared sequence feeding the
-   counter, an `iron_lion_uuid(...)` function with the same bit packing as Ruby,
-   and a `BEFORE INSERT` trigger per table that fills a NULL id from the row's
-   own columns (same naming conventions as the Ruby resolver). The model number
-   is fixed in each table's trigger, and `node` comes from a database setting
-   (`iron_lion.node`). ActiveRecord leaves a nil id out of the INSERT and reads
-   it back with `RETURNING`, so the database assigns ids in Rails. Postgres only
-   for now; other databases fall back to Ruby generation.
+2. Postgres generation (`IronLion::Postgres`): done. Static helpers live in
+   `lib/iron_lion/postgres/helpers.sql`; the `iron_lion_uuid(...)` function and
+   the generic `iron_lion_assign_id()` trigger function are generated from the
+   format. The trigger reads the row as jsonb using the Ruby resolver's column
+   conventions; the model number and id column are trigger arguments.
+   `iron_lion.<field>` settings play the role of ENV. ActiveRecord leaves a nil
+   id to the database and reads it back with `RETURNING`. Postgres only; other
+   databases fall back to Ruby generation.
 3. Rails integration: `rails g iron_lion:install` migration, the model table at
    `config/iron_lion.yml` (read-only in production), and `id.record` lookup.
 4. Rust crate (H3 via `h3o`) sharing a test-vector suite with Ruby and SQL.

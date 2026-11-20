@@ -3,6 +3,8 @@
 require "iron_lion"
 require "tmpdir"
 
+Dir[File.join(__dir__, "support", "**", "*.rb")].each { require _1 }
+
 # Classes the model field can resolve back to by name.
 module Fixtures
   Order = Struct.new(:tenant_id, keyword_init: true)

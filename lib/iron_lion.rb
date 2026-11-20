@@ -20,6 +20,7 @@ require_relative "iron_lion/model_table"
 require_relative "iron_lion/resolver"
 require_relative "iron_lion/id"
 require_relative "iron_lion/format"
+require_relative "iron_lion/postgres"
 
 # IronLion mints time-sortable UUIDv8s that carry the facts you need to debug
 # them: when, which model, which node, which tenant.

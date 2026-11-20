@@ -149,6 +149,45 @@ assign: false)` where the table must be read-only, such as production; there,
 an unknown model raises. A class can choose its own number by defining
 `.iron_lion_model_id`.
 
+## Postgres
+
+Postgres can mint the same ids from the same format, so rows inserted
+anywhere (by ActiveRecord, raw SQL, bulk loads or other services) get proper
+ids.
+
+```ruby
+postgres = IronLion::Postgres.new(IronLion.format)
+execute postgres.install_sql                       # functions and iron_lion_seq
+execute postgres.trigger_sql("orders", model: Order)
+```
+
+The trigger fills the id when an insert leaves it NULL, which is what
+ActiveRecord does; Rails then reads the id back with `RETURNING`. An id
+that was supplied is kept. Values come from the same places as in Ruby, adapted
+to the database:
+
+1. the inserted row: `iron_lion_tenant`, then `tenant_id`, then `tenant`. A
+   `geohash:` field also reads the row's `latitude`/`longitude`. An H3 field
+   accepts hex text or a bigint column.
+2. the model number, written into each table's trigger by `trigger_sql`
+3. a setting, which is the database's ENV:
+   `ALTER DATABASE app SET iron_lion.node = '53'`, or per transaction with
+   `SET LOCAL iron_lion.tenant = '7'`
+
+The time comes from the database clock, random bits from `gen_random_uuid()`,
+and the counter field from the shared `iron_lion_seq` sequence. The sequence
+keeps ids unique across every connection without relying on node bits.
+
+You can also mint an id by hand:
+
+```sql
+SELECT iron_lion_uuid(tenant => 7, model => 3, subdomain => 'acme');
+```
+
+`install_sql` is safe to run again after the format changes, and
+`uninstall_sql` removes everything. Postgres 13 or later is required for
+`gen_random_uuid()`. Other databases use Ruby generation.
+
 ## Guarantees
 
 - Valid RFC 9562 UUIDv8: 122 payload bits laid out around the version and
@@ -156,13 +195,20 @@ an unknown model raises. A class can choose its own number by defining
 - Within a process, ids strictly increase. If a millisecond's sequence runs out,
   or the system clock steps backwards, IronLion borrows the next millisecond
   instead of blocking.
-- Across processes, the time, node and random bits keep ids unique.
-- `IronLion.format.to_h` describes the format as plain data, ready for the SQL
-  and Rust back ends to come.
+- Across processes, the time, node and random bits keep ids unique; in Postgres,
+  `iron_lion_seq` does too.
+- Ruby and Postgres pack bits identically. The spec suite checks this against a
+  real database.
+- `IronLion.format.to_h` describes the format as plain data.
 
 ## Development
 
 ```bash
 bundle install
-bundle exec rake   # specs and RuboCop
+createdb iron_lion_test   # optional: enables the Postgres specs
+bundle exec rake          # specs and RuboCop
 ```
+
+The Postgres specs use `IRON_LION_TEST_DATABASE_URL` (default
+`dbname=iron_lion_test`). Each example runs in a transaction that is rolled back.
+Without a database they are skipped.
