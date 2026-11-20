@@ -45,6 +45,7 @@ code, not SQL. See README.md for the public API.
 - `lib/iron_lion/model_table.rb`: append-only model-number table (YAML)
 - `lib/iron_lion/id.rb`: the id value object (`#record` finds its row)
 - `lib/iron_lion/installer.rb`: installs functions + triggers through an ActiveRecord connection
+- `lib/iron_lion/record_ids.rb`: mints ids in Ruby before create when the format has `from:` resolvers
 - `lib/iron_lion/railtie.rb`, `tasks/iron_lion.rake`, `lib/generators/iron_lion/`: Rails integration
 
 ## Commands
@@ -74,7 +75,11 @@ own schema, and are skipped without a database. Locally, Homebrew's
    conventions; the model number and id column are trigger arguments (an
    integer `iron_lion_model` column overrides the model). Both back ends number
    STI subclasses by their `base_class`.
-   `iron_lion.<field>` settings play the role of ENV. ActiveRecord leaves a nil
+   `iron_lion.<field>` settings play the role of ENV. The counter is the shared
+   `iron_lion_seq` modulo 2^bits (settled: keep it lock-free): unique below
+   2^bits ids per millisecond and sorted by millisecond, but in arbitrary order
+   within one. Only Ruby is strictly increasing, within one process. An explicit
+   `created_at` takes random counter bits in both back ends. ActiveRecord leaves a nil
    id to the database and reads it back with `RETURNING`. Postgres only; other
    databases fall back to Ruby generation.
 3. Rails integration: done. `IronLion::Railtie` points the default model table at
@@ -84,6 +89,10 @@ own schema, and are skipped without a database. Locally, Homebrew's
    model table whose primary key is a uuid with no default. The generator
    (`lib/generators/iron_lion/`) writes the initializer and `config/iron_lion.yml`.
    `Id#record` / `IronLion.find` fetch an id's row through its model field.
+   When the format has any `from:` field, `IronLion::RecordIds` (included into
+   `ActiveRecord::Base` by the Railtie) mints ids in Ruby before create, since
+   the trigger can't run resolvers; the trigger stays for raw SQL. The
+   IronLion-table rule (uuid key, no default) is `Installer.iron_lion_table?`.
 4. Rust crate (H3 via `h3o`) sharing a test-vector suite with Ruby and SQL.
 
 License: MIT.

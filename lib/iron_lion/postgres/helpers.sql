@@ -14,7 +14,8 @@ CREATE OR REPLACE FUNCTION iron_lion_missing(field text) RETURNS void
 LANGUAGE plpgsql AS $iron_lion$
 BEGIN
   RAISE EXCEPTION 'No value for %. IronLion looked in: iron_lion_uuid(% => ...), the row''s columns '
-                  '(when inserting), and the setting iron_lion.%', field, field, field
+                  '(when inserting), and the setting iron_lion.%. Ruby from: resolvers don''t run in the '
+                  'database; ActiveRecord mints ids in Ruby when the format has one.', field, field, field
     USING ERRCODE = 'not_null_violation';
 END
 $iron_lion$;

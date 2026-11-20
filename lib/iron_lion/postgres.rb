@@ -14,7 +14,8 @@ module IronLion
   # Anything the row lacks comes from a database setting such as
   # iron_lion.node, which is the database's ENV. The counter field draws from
   # the shared iron_lion_seq sequence, so ids are unique across every
-  # connection without depending on node bits.
+  # connection without depending on node bits, while fewer than 2^bits are
+  # made per millisecond. Within a millisecond their order is arbitrary.
   #
   # The installed functions:
   #
@@ -144,10 +145,22 @@ module IronLion
       when :time
         now = "floor(extract(epoch FROM coalesce(#{identifier(field.name)}, clock_timestamp())) * 1000)"
         "iron_lion_int_bits(#{now} - #{field.options[:epoch_ms]}, #{field.bits}, #{name})"
-      when :counter
-        "iron_lion_int_bits(nextval('iron_lion_seq') % (2::numeric ^ #{field.bits}), #{field.bits}, #{name})"
+      when :counter then encode_counter(field)
       else "substring(_random FROM #{random_offset} FOR #{field.bits})"
       end
+    end
+
+    # The next iron_lion_seq value, wrapped to the field's bits: unique while
+    # fewer than 2^bits ids are made per millisecond, in no particular order
+    # within one. A backdated id (created_at given) takes random bits instead,
+    # as Ruby does, and leaves the sequence alone.
+    def encode_counter(field)
+      created_at = identifier(format.fields.first.name)
+      wrapped = "nextval('iron_lion_seq') % (2::numeric ^ #{field.bits})"
+      counted = "iron_lion_int_bits(#{wrapped}, #{field.bits}, #{literal(field.name)})"
+      random = "substring(iron_lion_random_bits() FROM 1 FOR #{field.bits})"
+
+      "CASE WHEN #{created_at} IS NULL THEN #{counted} ELSE #{random} END"
     end
 
     # Fields taken from the argument, else the iron_lion.<field> setting.

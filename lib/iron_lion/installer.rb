@@ -11,15 +11,51 @@ module IronLion
   # because Postgres fills the default before the trigger can tell the id
   # was left out.
   #
+  # A `from:` resolver only runs in Ruby, so when the format has one,
+  # IronLion::RecordIds mints these tables' ids before create instead. The
+  # trigger still fills ids for raw SQL and bulk inserts.
+  #
   # Running it again is harmless; Rails runs it after every migration and
   # schema load.
   class Installer
-    Report = Data.define(:installed, :skipped) do
+    # from_fields names the format's fields with `from:` resolvers. When there
+    # are any, IronLion::RecordIds mints ids in Ruby, and the report says why.
+    Report = Data.define(:installed, :skipped, :from_fields) do
+      def initialize(installed:, skipped:, from_fields: [])
+        super
+      end
+
       def to_s
-        lines = installed.map { |table, model| "  #{table}: IronLion ids (#{model})" }
+        lines = installed.map { |table, model| "  #{table}: IronLion ids (#{model})#{minted_in_ruby}" }
         lines += skipped.map { |table, reason| "  #{table}: skipped, #{reason}" }
         lines.join("\n")
       end
+
+      private
+
+      def minted_in_ruby
+        return "" if from_fields.empty?
+
+        *others, last = from_fields.map(&:to_s)
+        names = others.empty? ? last : "#{others.join(', ')} and #{last}"
+        ", minted in Ruby because #{names} #{others.empty? ? 'uses' : 'use'} from:"
+      end
+    end
+
+    # The IronLion table rule, kept in one place: the primary key is a uuid
+    # with no default. Both the installer and IronLion::RecordIds ask it.
+    def self.iron_lion_table?(connection, table)
+      column = uuid_primary_key(connection, table)
+      !column.nil? && column.default.nil? && column.default_function.nil?
+    end
+
+    # The table's primary key column when it is a uuid, otherwise nil.
+    def self.uuid_primary_key(connection, table)
+      key = connection.primary_key(table)
+      return unless key.is_a?(String)
+
+      column = connection.columns(table).find { _1.name == key }
+      column if column&.sql_type == "uuid"
     end
 
     attr_reader :connection, :format
@@ -52,7 +88,7 @@ module IronLion
         installed << [table, model.name]
       end
 
-      Report.new(installed:, skipped:)
+      Report.new(installed:, skipped:, from_fields: format.from_fields.map(&:name))
     end
 
     def uninstall
@@ -78,12 +114,9 @@ module IronLion
 
     # nil to install, :not_uuid to pass over quietly, or why a uuid table was left alone.
     def skip_reason(table)
-      key = connection.primary_key(table)
-      return :not_uuid unless key.is_a?(String)
-
-      column = connection.columns(table).find { _1.name == key }
-      return :not_uuid unless column.sql_type == "uuid"
-      return nil if column.default.nil? && column.default_function.nil?
+      column = self.class.uuid_primary_key(connection, table)
+      return :not_uuid if column.nil?
+      return nil if self.class.iron_lion_table?(connection, table)
 
       "its id defaults to #{column.default_function || column.default.inspect} " \
         "(create it with `id: :uuid, default: nil` for IronLion ids)"

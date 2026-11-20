@@ -6,6 +6,8 @@ module IronLion
   # - The model table lives in config/iron_lion.yml. New models are numbered in
   #   development and test; elsewhere the file is read-only, so a model that
   #   was never numbered (and committed) raises instead of being guessed.
+  # - Models mint their own ids in Ruby when the format has `from:` resolvers,
+  #   which the database can't run (IronLion::RecordIds).
   # - After every migration and schema load, the Postgres functions and
   #   triggers are (re)installed. schema.rb does not record functions or
   #   triggers, so this is what keeps a freshly loaded test database working.
@@ -14,6 +16,10 @@ module IronLion
     initializer "iron_lion.model_table", before: :load_config_initializers do |app|
       ModelTable.default_path = app.root.join("config", "iron_lion.yml")
       ModelTable.default_assign = ::Rails.env.local?
+    end
+
+    initializer "iron_lion.record_ids" do
+      ActiveSupport.on_load(:active_record) { include IronLion::RecordIds }
     end
 
     initializer "iron_lion.database_tasks" do

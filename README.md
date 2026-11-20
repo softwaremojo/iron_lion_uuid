@@ -179,7 +179,8 @@ IronLion.parse(order.id)
 ```
 
 There is nothing to add to models. Postgres assigns the id when the row is
-inserted, and ActiveRecord reads it back.
+inserted, and ActiveRecord reads it back (unless the format has `from:`
+resolvers; see below).
 
 - **Triggers maintain themselves.** After every migration and schema load,
   IronLion reinstalls its functions and puts a trigger on each table whose model
@@ -195,6 +196,13 @@ inserted, and ActiveRecord reads it back.
 - **Model numbers come from `config/iron_lion.yml`.** New models are numbered in
   development and test. Everywhere else the file is read-only, and a model that
   was never numbered raises with instructions. Commit the file.
+- **`from:` resolvers mint in Ruby.** A resolver such as
+  `tenant bits: 20, from: -> { Current.tenant_id }` is Ruby, and the database
+  can't run it. So when the format has any `from:` field, every model on an
+  IronLion table mints its id in Ruby just before create, and the install report
+  says so. The trigger stays, and still fills ids for raw SQL and bulk inserts
+  (`insert_all`), which don't run resolvers: give those the value as a column
+  or an `iron_lion.<field>` setting.
 
 ## Postgres
 
@@ -240,11 +248,18 @@ SELECT iron_lion_uuid(tenant => 7, model => 3, subdomain => 'acme');
 
 - Valid RFC 9562 UUIDv8: 122 payload bits laid out around the version and
   variant bits.
-- Within a process, ids strictly increase. If a millisecond's sequence runs out,
-  or the system clock steps backwards, IronLion borrows the next millisecond
-  instead of blocking.
-- Across processes, the time, node and random bits keep ids unique; in Postgres,
-  `iron_lion_seq` does too.
+- Ids sort by creation time, to the millisecond, from either back end.
+- Ruby: within a process, ids strictly increase. If a millisecond's sequence
+  runs out, or the system clock steps backwards, IronLion borrows the next
+  millisecond instead of blocking. Across processes, the time, node and random
+  bits keep ids unique.
+- Postgres: the counter is the shared `iron_lion_seq` sequence modulo 2^bits,
+  so ids are unique across every connection while fewer than 2^bits are made
+  per millisecond. They sort by millisecond; within one millisecond their order
+  is arbitrary, since concurrent transactions have no meaningful order. The
+  sequence is lock-free and never blocks.
+- An explicit `created_at` (a backdated id) gets a random counter value in
+  both back ends, and leaves `iron_lion_seq` untouched.
 - Ruby and Postgres pack bits identically. The spec suite checks this against a
   real database.
 - `IronLion.format.to_h` describes the format as plain data.
