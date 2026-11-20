@@ -168,6 +168,24 @@ RSpec.describe IronLion::Postgres, :postgres do
       expect(decoded(uuid).to_h).to include(tenant: 1, model: 9)
     end
 
+    it "prefers the row's integer iron_lion_model to the trigger's model" do
+      sql("CREATE TABLE parts (id uuid PRIMARY KEY, iron_lion_model int, tenant_id int, subdomain text)")
+      db.exec(postgres.trigger_sql("parts", model: 9))
+      overridden = value("INSERT INTO parts (iron_lion_model, tenant_id, subdomain) VALUES (12, 1, 'a') RETURNING id")
+      defaulted = value("INSERT INTO parts (tenant_id, subdomain) VALUES (1, 'a') RETURNING id")
+      expect([decoded(overridden).to_h[:model], decoded(defaulted).to_h[:model]]).to eq([12, 9])
+    end
+
+    it "refuses a model name in the row, having no model table to look it up in" do
+      sql("CREATE TABLE parts (id uuid PRIMARY KEY, iron_lion_model text, tenant_id int, subdomain text)")
+      db.exec(postgres.trigger_sql("parts", model: 9))
+      db.exec("SAVEPOINT attempt")
+      expect { sql("INSERT INTO parts (iron_lion_model, tenant_id, subdomain) VALUES ('Part', 1, 'a')") }
+        .to raise_error(PG::Error, /iron_lion_model is 'Part'; the database needs a model number/)
+    ensure
+      db.exec("ROLLBACK TO SAVEPOINT attempt")
+    end
+
     it "fills an id column with another name" do
       sql("CREATE TABLE events (uuid uuid PRIMARY KEY, tenant_id int, subdomain text)")
       db.exec(postgres.trigger_sql("events", model: 4, column: "uuid"))

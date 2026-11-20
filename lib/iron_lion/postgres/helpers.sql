@@ -257,6 +257,27 @@ BEGIN
 END
 $iron_lion$;
 
+-- A row's model number from its iron_lion_<field> column, or NULL. Only
+-- integers: unlike Ruby, the database has no model table to look names up in.
+CREATE OR REPLACE FUNCTION iron_lion_row_model(row_data jsonb, model_column text) RETURNS numeric
+LANGUAGE plpgsql IMMUTABLE AS $iron_lion$
+DECLARE
+  _value text := row_data ->> model_column;
+BEGIN
+  IF _value IS NULL THEN
+    RETURN NULL;
+  END IF;
+
+  IF _value !~ '^[0-9]+$' THEN
+    RAISE EXCEPTION 'The row''s % is %; the database needs a model number (an integer), '
+                    'since it has no model table to look names up in', model_column, quote_literal(_value)
+      USING ERRCODE = 'invalid_text_representation';
+  END IF;
+
+  RETURN _value::numeric;
+END
+$iron_lion$;
+
 -- A row's own coordinates as a geohash: latitude/longitude, lat/lng or lat/lon.
 CREATE OR REPLACE FUNCTION iron_lion_row_geohash(row_data jsonb, chars integer) RETURNS text
 LANGUAGE plpgsql IMMUTABLE AS $iron_lion$

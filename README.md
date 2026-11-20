@@ -189,6 +189,9 @@ inserted, and ActiveRecord reads it back.
 - **Default uuid keys are left alone.** A uuid key that defaults to
   `gen_random_uuid()` (Rails' default for `id: :uuid`) keeps its default. The
   install report names those tables, so an omission is easy to spot.
+- **Single-table inheritance uses the base class.** A `Car < Vehicle` row gets
+  `Vehicle`'s model number, from Ruby and Postgres alike, and
+  `IronLion.find(id)` still returns the `Car`.
 - **Model numbers come from `config/iron_lion.yml`.** New models are numbered in
   development and test. Everywhere else the file is read-only, and a model that
   was never numbered raises with instructions. Commit the file.
@@ -213,7 +216,8 @@ to the database:
 1. the inserted row: `iron_lion_tenant`, then `tenant_id`, then `tenant`. A
    `geohash:` field also reads the row's `latitude`/`longitude`. An H3 field
    accepts hex text or a bigint column.
-2. the model number, written into each table's trigger by `trigger_sql`
+2. the model number: an integer `iron_lion_model` column on the row, else the
+   one written into each table's trigger by `trigger_sql`
 3. a setting, which is the database's ENV:
    `ALTER DATABASE app SET iron_lion.node = '53'`, or per transaction with
    `SET LOCAL iron_lion.tenant = '7'`

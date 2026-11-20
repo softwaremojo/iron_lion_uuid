@@ -71,7 +71,9 @@ own schema, and are skipped without a database. Locally, Homebrew's
    `lib/iron_lion/postgres/helpers.sql`; the `iron_lion_uuid(...)` function and
    the generic `iron_lion_assign_id()` trigger function are generated from the
    format. The trigger reads the row as jsonb using the Ruby resolver's column
-   conventions; the model number and id column are trigger arguments.
+   conventions; the model number and id column are trigger arguments (an
+   integer `iron_lion_model` column overrides the model). Both back ends number
+   STI subclasses by their `base_class`.
    `iron_lion.<field>` settings play the role of ENV. ActiveRecord leaves a nil
    id to the database and reads it back with `RETURNING`. Postgres only; other
    databases fall back to Ruby generation.

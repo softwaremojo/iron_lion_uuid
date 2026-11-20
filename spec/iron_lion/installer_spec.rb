@@ -60,8 +60,15 @@ RSpec.describe IronLion::Installer, :active_record do
       expect(id.to_h).to include(tenant: 7, model: Shop::Order)
     end
 
-    it "names the base class for single-table inheritance" do
-      expect(parse(Shop::Car.create!(tenant_id: 1).id).model).to eq(Shop::Vehicle)
+    it "numbers single-table inheritance by the base class, in Ruby and Postgres alike" do
+      from_ruby = format.generate(Shop::Car.new(tenant_id: 1))
+      from_postgres = parse(Shop::Car.create!(tenant_id: 1).id)
+
+      explicit = format.generate(model: Shop::Car, tenant: 1)
+
+      expect([from_ruby.model, from_postgres.model, explicit.model]).to all(eq(Shop::Vehicle))
+      expect(table.to_h).not_to have_key("Shop::Car")
+      expect(from_postgres.record).to be_a(Shop::Car)
     end
 
     it "fills ids for bulk inserts too" do
