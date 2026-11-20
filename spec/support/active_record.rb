@@ -2,8 +2,11 @@
 
 # Examples tagged :active_record run through an ActiveRecord connection to
 # the same test database as :postgres examples, inside a transaction with its
-# own schema that is rolled back afterwards.
+# own schema that is rolled back afterwards. Like :postgres examples they are
+# skipped without a database, or fail when IRON_LION_REQUIRE_DATABASE is set.
 module ActiveRecordHelpers
+  def self.error = @error
+
   def self.connected?
     return @connected if defined?(@connected)
 
@@ -13,7 +16,8 @@ module ActiveRecordHelpers
         ActiveRecord::Base.establish_connection(PostgresHelpers::DATABASE)
         ActiveRecord::Base.connection.verify!
         true
-      rescue LoadError, StandardError
+      rescue LoadError, StandardError => e
+        @error = e
         false
       end
   end
@@ -42,7 +46,7 @@ RSpec.configure do |config|
         connection.schema_cache.clear!
       end
     else
-      skip "no Postgres at #{PostgresHelpers::DATABASE}"
+      skip PostgresHelpers.unavailable(ActiveRecordHelpers.error)
     end
   end
 end
